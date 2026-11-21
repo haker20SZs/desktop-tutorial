@@ -554,18 +554,8 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
 
-    # Keep the vertical volume slider attached to the speaker button.
-    # A lower-left position detached it from the hover target.
-    playerbar_path = root / "ui" / "playerbar.slint"
-    playerbar = playerbar_path.read_text(encoding="utf-8")
-    playerbar = replace_once(
-        playerbar,
-        "        x: 16px;\\n        y: root.height - self.height - 16px;\\n",
-        "        x: root.width - 49px + 16px - self.width / 2;\\n        y: 24px - self.height;\\n",
-        "vertical volume slider above speaker button",
-    )
-    playerbar_path.write_text(playerbar, encoding="utf-8")
-
+    # Upstream already anchors the vertical slider directly above the speaker button.
+    # Do not relocate it: keeping it adjacent preserves the hover interaction.
     popups_path = root / "ui" / "popups.slint"
     popups = popups_path.read_text(encoding="utf-8")
     popups = replace_once(
