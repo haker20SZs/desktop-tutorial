@@ -463,8 +463,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     tray_path.write_text(tray_new, encoding="utf-8")
     # Lyrics fallback: Yandex first, then user files, then LRCLIB's public API.
     api_path = root / "src" / "api.rs"
-    api = api_path.read_text(encoding="utf-8")
-    api = replace_once(api, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
+    api_new = replace_once(api_new, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
 
     net_path = root / "src" / "net.rs"
     net = net_path.read_text(encoding="utf-8")
@@ -554,7 +553,6 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             Ok(Data::Lyrics(lyrics))
         },''', "lyrics provider fallback")
     net_path.write_text(net, encoding="utf-8")
-    api_path.write_text(api, encoding="utf-8")
 
     gui_path = root / "src" / "gui.rs"
     gui = gui_path.read_text(encoding="utf-8")
