@@ -349,7 +349,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     }
 '''
     navbar = replace_once(navbar, old_profile, new_profile, "profile card redesign")
-    navbar_path.write_text(navbar, encoding="utf-8", newline="\n")
+    navbar_path.write_text(navbar, encoding="utf-8")
 
     # Remove Discord status UI and stop its IPC worker; retain old JSON fields for compatibility.
     account_path = root / "ui" / "account.slint"
@@ -362,7 +362,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
                 clicked => { App.setting("discord"); }
             }
 ''', "", "remove Discord settings row")
-    account_path.write_text(account, encoding="utf-8", newline="\n")
+    account_path.write_text(account, encoding="utf-8")
 
     state_path = root / "ui" / "state.slint"
     state = state_path.read_text(encoding="utf-8")
@@ -370,7 +370,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     in property <bool> discord-on;
     in property <string> discord-status;
 ''', "", "remove Discord UI state")
-    state_path.write_text(state, encoding="utf-8", newline="\n")
+    state_path.write_text(state, encoding="utf-8")
 
     gui_path = root / "src" / "gui.rs"
     gui = gui_path.read_text(encoding="utf-8")
@@ -395,10 +395,10 @@ fn global_keys() -> [(i32, u32, u32); 3] {
                 st.cfg.save();
             }
 ''', "", "remove Discord settings action")
-    gui_path.write_text(gui, encoding="utf-8", newline="\n")
+    gui_path.write_text(gui, encoding="utf-8")
 
-    api_path.write_text(api_new, encoding="utf-8", newline="\n")
-    tray_path.write_text(tray_new, encoding="utf-8", newline="\n")
+    api_path.write_text(api_new, encoding="utf-8")
+    tray_path.write_text(tray_new, encoding="utf-8")
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
 
 if __name__ == "__main__":
