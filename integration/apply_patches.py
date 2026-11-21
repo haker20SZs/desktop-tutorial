@@ -716,7 +716,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     playerbar = replace_once(
         playerbar,
         "            width: App.duration > 0 ? parent.width * App.position / App.duration : 0;",
-        "            width: parent.width * mini-progress;",
+        "            x: 44px;\n            width: max(0px, (parent.width - 44px) * mini-progress);",
         "mini-player progress follows seek drag",
     )
     playerbar = replace_once(
