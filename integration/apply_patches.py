@@ -558,7 +558,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
 
     gui_path = root / "src" / "gui.rs"
     gui = gui_path.read_text(encoding="utf-8")
-    gui = replace_once(gui, '        let key = format!("lyrics:{}", t.id);', '        let key = format!("lyrics:{}|{}|{}|{}", t.id, t.title.replace(\\'|\\', " "), t.artists.replace(\\'|\\', " "), t.duration_ms / 1000);', "pass track metadata to lyrics providers")
+    gui = replace_once(gui, '        let key = format!("lyrics:{}", t.id);', """        let key = format!("lyrics:{}|{}|{}|{}", t.id, t.title.replace('|', " "), t.artists.replace('|', " "), t.duration_ms / 1000);""", "pass track metadata to lyrics providers")
     gui = replace_once(gui, '            app.set_has_lyrics(t.lyrics);', '            app.set_has_lyrics(true);', "always enable lyrics panel for fallback providers")
     gui = replace_once(gui, '        if t.lyrics && current {', '        if current {', "always show lyrics action for current track")
     gui_path.write_text(gui, encoding="utf-8")
