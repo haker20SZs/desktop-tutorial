@@ -619,16 +619,16 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
                 }
             }
         }""",
-        """        // Вертикальная громкость над динамиком и в мини-плеере.
+        """        // Значок громкости закреплён в нижнем левом углу мини-плеера.
         mini-vol-popup := VolumePopup {
-            x: parent.width - 184px;
-            y: 2px - self.height;
+            x: 0px;
+            y: parent.height - 26px - self.height;
             visible: ta.has-hover || mini-vol-popup.hovered;
             glass: false;
         }
         if ta.has-hover || mini-vol-popup.hovered: BarButton {
-            x: parent.width - 172px;
-            y: 2px;
+            x: 12px;
+            y: parent.height - 26px;
             width: 24px;
             height: 24px;
             icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
