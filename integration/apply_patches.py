@@ -420,8 +420,20 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     # Persistent switches for optional sidebar sections.
     config_path = root / "src" / "config.rs"
     config = config_path.read_text(encoding="utf-8")
-    config = replace_once(config, '    pub navbar_collapsed: bool,\n', '    pub navbar_collapsed: bool,\n    pub show_concerts: bool,\n    pub show_nonmusic: bool,\n', "navigation config fields")
-    config = replace_once(config, '            navbar_collapsed: false,\n', '            navbar_collapsed: false,\n            show_concerts: true,\n            show_nonmusic: true,\n', "navigation config defaults")
+    config, fields_added = re.subn(
+        r"(?m)^([ \\t]*pub navbar_collapsed: bool,)[ \\t]*$",
+        lambda m: m.group(1) + "\\n    pub show_concerts: bool,\\n    pub show_nonmusic: bool,",
+        config,
+    )
+    if fields_added != 1:
+        raise SystemExit(f"navigation config fields: expected one navbar_collapsed field, found {fields_added}")
+    config, defaults_added = re.subn(
+        r"(?m)^([ \\t]*navbar_collapsed: false,)[ \\t]*$",
+        lambda m: m.group(1) + "\\n            show_concerts: true,\\n            show_nonmusic: true,",
+        config,
+    )
+    if defaults_added != 1:
+        raise SystemExit(f"navigation config defaults: expected one navbar_collapsed default, found {defaults_added}")
     config_path.write_text(config, encoding="utf-8")
 
     state_path = root / "ui" / "state.slint"
