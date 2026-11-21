@@ -464,6 +464,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     # Lyrics fallback: Yandex first, then user-supplied local files.
     api_path = root / "src" / "api.rs"
     api_new = replace_once(api_new, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
+    api_path.write_text(api_new, encoding="utf-8")
 
     net_path = root / "src" / "net.rs"
     net = net_path.read_text(encoding="utf-8")
