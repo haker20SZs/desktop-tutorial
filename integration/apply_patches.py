@@ -721,18 +721,18 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     playerbar = replace_once(
         playerbar,
-        `        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
+        """        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
     }
 }
-`,
-        `        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
+""",
+        """        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
     }
 
     mini-seek-ta := TouchArea {
         x: 44px;
-        y: root.height - 10px;
+        y: root.height - 12px;
         width: max(0px, root.width - 44px);
-        height: 10px;
+        height: 12px;
         enabled: on && App.duration > 0;
         mouse-cursor: MouseCursor.pointer;
         pointer-event(e) => {
@@ -751,14 +751,14 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         }
     }
     if on && (mini-seek-ta.has-hover || mini-drag-progress >= 0): Rectangle {
-        x: max(0px, min(root.width - 8px, root.width * mini-progress - 4px));
-        y: root.height - 5px;
+        x: 44px + max(0px, min(root.width - 52px, (root.width - 44px) * mini-progress)) - 4px;
+        y: root.height - 6px;
         width: 8px; height: 8px;
         border-radius: 4px;
         background: Theme.controls-color-primary-default-enabled;
     }
 }
-`,
+""",
         "mini-player draggable seek bar",
     )
     playerbar_path.write_text(playerbar, encoding="utf-8")
