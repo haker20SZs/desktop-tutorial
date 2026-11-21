@@ -1,0 +1,67 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [pulsesync-rust]
+    tags: ['pulsesync-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows x64 single executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout integration repository
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned Rust client
+        uses: actions/checkout@v4
+        with:
+          repository: SpolzerMod/yamusic-rs
+          ref: v1.1.3
+          path: yamusic-rs
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: yamusic-rs
+
+      - name: Apply native integrations
+        shell: pwsh
+        run: py -3 integration/apply_patches.py yamusic-rs
+
+      - name: Run tests
+        run: cargo test --release --manifest-path yamusic-rs/Cargo.toml
+
+      - name: Build one EXE
+        run: cargo build --release --manifest-path yamusic-rs/Cargo.toml
+
+      - name: Verify executable and print SHA-256
+        shell: pwsh
+        run: |
+          $exe = "yamusic-rs/target/release/yamusic-rs.exe"
+          if (!(Test-Path $exe)) { throw "Build did not produce $exe" }
+          Get-Item $exe | Format-List FullName,Length
+          (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+
+      - name: Upload standalone EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: YandexMusic-RS-PulseSync-Windows-x64
+          path: yamusic-rs/target/release/yamusic-rs.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish release asset
+        if: startsWith(github.ref, 'refs/tags/pulsesync-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Yandex Music RS + PulseSync ${{ github.ref_name }}
+          files: yamusic-rs/target/release/yamusic-rs.exe
+          generate_release_notes: true

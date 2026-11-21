@@ -1,5 +1,43 @@
-# Welcome to GitHub Desktop!
+# Yandex Music RS + PulseSync (single EXE)
 
-This is your README. READMEs are where you can communicate what your project is and how to use it.
+This repository builds one Windows x64 executable from the Rust client
+[SpolzerMod/yamusic-rs](https://github.com/SpolzerMod/yamusic-rs), with a small
+set of PulseSync-style features ported into the native Rust application.
 
-Write your name on line 6, save it, and then head back to GitHub Desktop.
+## What is integrated in this first build
+
+- **One native executable:** the build starts from the upstream Rust/Slint client; it does not launch or bundle a second Electron app.
+- **Global media shortcuts (ported behavior):** Ctrl+Alt+Space = play/pause, Ctrl+Alt+Left = previous, Ctrl+Alt+Right = next. Hardware media keys remain enabled.
+- **Safer reconnects:** only idempotent GET/HEAD API requests are retried after transport failures and transient HTTP statuses (408, 425, 429, 500, 502, 503, 504), with a short exponential backoff and support for Retry-After. Login failures and write requests are not retried.
+- Discord Rich Presence, tray, mini-player and media keys are already provided by yamusic-rs.
+
+This is an initial native port, not a full transplant of PulseSync's Electron internals.
+Features such as Yandex Station / Ynison remote control, Last.fm, WASAPI exclusive
+output and user-configurable hotkey UI need separate Rust implementations and are
+not represented as completed here.
+
+## Build
+
+Push to the `pulsesync-rust` branch or run the **Build Windows EXE** workflow.
+GitHub Actions checks out the pinned upstream tag `v1.1.3`, applies
+`integration/apply_patches.py`, runs Rust tests, and builds:
+
+`yamusic-rs/target/release/yamusic-rs.exe`
+
+The workflow uploads the executable as a GitHub Actions artifact. To publish a
+GitHub Release, push a tag named `pulsesync-v0.1.0` (or a later version).
+
+## Important service and media limitations
+
+The client still uses the user's own Yandex account and the service's access
+decisions. It does not bypass Plus, DRM, account age/content restrictions, or
+server-side track availability. It cannot reconstruct an original vocal track
+from an already censored/edited audio master. Network retries can reduce the
+impact of temporary outages; they cannot make unavailable Yandex servers respond.
+
+## Licensing and attribution
+
+The Rust application is based on yamusic-rs, distributed under GPL-3.0-only.
+The original PulseSync-mod repository is MIT-licensed; this project ports selected
+feature behavior rather than embedding the Electron patcher or its app bundle.
+Keep upstream notices and license files with redistributed builds.
