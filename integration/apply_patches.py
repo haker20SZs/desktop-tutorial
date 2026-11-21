@@ -637,9 +637,133 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         }""",
         "mini-player vertical volume popup",
     )
+
+    # Add a compact horizontal volume control to the main player. On narrower
+    # windows it is hidden and the existing vertical popup remains available.
+    playerbar = replace_once(
+        playerbar,
+        "                width: c - 188px - self.x - 16px;",
+        "                width: max(0px, c - 188px - self.x - (parent.width >= 1000px ? 136px : 16px));",
+        "main player title width for volume control",
+    )
+    playerbar = replace_once(
+        playerbar,
+        "                width: min(self.content-width, c - 188px - self.x - 16px);",
+        "                width: min(self.content-width, max(0px, c - 188px - self.x - (parent.width >= 1000px ? 136px : 16px)));",
+        "main player artist width for volume control",
+    )
+    playerbar = replace_once(
+        playerbar,
+        "            BarButton { x: c - 188px + 6px; y: 24px; icon: Icons.dislike;",
+        """            if on && parent.width >= 1000px: Rectangle {
+                x: c - 330px;
+                y: 24px;
+                width: 128px;
+                height: 32px;
+                BarButton {
+                    x: 0px; y: 0px; width: 24px; height: 24px;
+                    icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
+                    icon-size: 18px;
+                    clicked => { App.toggle-mute(); }
+                }
+                Rectangle {
+                    x: 32px; y: 14px; width: 92px; height: 4px;
+                    border-radius: 2px;
+                    background: #ffffff35;
+                    Rectangle {
+                        width: parent.width * max(0, min(1, App.volume));
+                        height: parent.height;
+                        border-radius: 2px;
+                        background: Theme.controls-color-primary-default-enabled;
+                    }
+                }
+                Rectangle {
+                    x: 32px + 92px * max(0, min(1, App.volume)) - 5px;
+                    y: 11px; width: 10px; height: 10px;
+                    border-radius: 5px;
+                    background: #ffffff;
+                }
+                volume-ta := TouchArea {
+                    x: 32px; y: 4px; width: 92px; height: 24px;
+                    mouse-cursor: MouseCursor.pointer;
+                    pointer-event(e) => {
+                        if e.kind == PointerEventKind.down {
+                            App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                        }
+                    }
+                    moved => {
+                        if self.pressed {
+                            App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                        }
+                    }
+                }
+            }
+            BarButton { x: c - 188px + 6px; y: 24px; icon: Icons.dislike;""",
+        "main player horizontal volume slider",
+    )
+
+    # Add a draggable seek target to the mini-player without intercepting the
+    # speaker icon or transport buttons. The visual progress remains full-width.
+    playerbar = replace_once(
+        playerbar,
+        "export component MiniPlayer inherits Rectangle {\n",
+        """export component MiniPlayer inherits Rectangle {
+    property <float> mini-drag-progress: -1;
+    property <float> mini-progress: mini-drag-progress >= 0 ? mini-drag-progress : (App.duration > 0 ? App.position / App.duration : 0);
+""",
+        "mini-player seek state",
+    )
+    playerbar = replace_once(
+        playerbar,
+        "            width: App.duration > 0 ? parent.width * App.position / App.duration : 0;",
+        "            width: parent.width * mini-progress;",
+        "mini-player progress follows seek drag",
+    )
+    playerbar = replace_once(
+        playerbar,
+        `        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
+    }
+}
+`,
+        `        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
+    }
+
+    mini-seek-ta := TouchArea {
+        x: 44px;
+        y: root.height - 10px;
+        width: max(0px, root.width - 44px);
+        height: 10px;
+        enabled: on && App.duration > 0;
+        mouse-cursor: MouseCursor.pointer;
+        pointer-event(e) => {
+            if e.button == PointerEventButton.left && e.kind == PointerEventKind.down {
+                root.mini-drag-progress = max(0, min(1, self.mouse-x / self.width));
+            }
+            if e.button == PointerEventButton.left && e.kind == PointerEventKind.up && root.mini-drag-progress >= 0 {
+                App.seek(root.mini-drag-progress * App.duration);
+                root.mini-drag-progress = -1;
+            }
+        }
+        moved => {
+            if self.pressed {
+                root.mini-drag-progress = max(0, min(1, self.mouse-x / self.width));
+            }
+        }
+    }
+    if on && (mini-seek-ta.has-hover || mini-drag-progress >= 0): Rectangle {
+        x: max(0px, min(root.width - 8px, root.width * mini-progress - 4px));
+        y: root.height - 5px;
+        width: 8px; height: 8px;
+        border-radius: 4px;
+        background: Theme.controls-color-primary-default-enabled;
+    }
+}
+`,
+        "mini-player draggable seek bar",
+    )
     playerbar_path.write_text(playerbar, encoding="utf-8")
 
-    print("Applied native PulseSync-style hotkeys, vertical volume controls, and safe GET/HEAD retries.")
+    print("Applied native PulseSync-style hotkeys, horizontal and vertical volume controls, mini-player seeking, and safe GET/HEAD retries.")
 
 if __name__ == "__main__":
     main()
