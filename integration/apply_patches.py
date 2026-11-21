@@ -477,6 +477,7 @@ fn lyrics_slug(value: &str) -> String {
 fn fallback_lyrics(track_id: &str, title: &str, artists: &str, duration: u64) -> Lyrics {
     let mut out = Lyrics::default();
     let folder = crate::config::dir().join("lyrics");
+    let _ = std::fs::create_dir_all(&folder);
     let stem = lyrics_slug(&format!("{artists} - {title}"));
     for path in [
         folder.join(format!("{track_id}.lrc")),
