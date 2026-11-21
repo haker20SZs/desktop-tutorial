@@ -464,6 +464,8 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     # Lyrics fallback: Yandex first, then user-supplied local files.
     api_path = root / "src" / "api.rs"
     api_new = replace_once(api_new, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
+    api_new = replace_once(api_new, "    pub lyrics: bool,\n", "", "remove unused Yandex lyrics availability flag")
+    api_new = replace_once(api_new, '        lyrics: flag("hasAvailableSyncLyrics") || flag("hasAvailableTextLyrics"),\n', "", "remove lyrics availability initializer")
     api_path.write_text(api_new, encoding="utf-8")
 
     net_path = root / "src" / "net.rs"
@@ -473,6 +475,14 @@ fn lyrics_slug(value: &str) -> String {
     value.chars().map(|c| {
         if c.is_alphanumeric() || c == ' ' || c == '-' { c } else { '_' }
     }).collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn is_subscription_notice(lyrics: &Lyrics) -> bool {
+    let text = lyrics.text.join(" ").to_lowercase();
+    text.contains("подключите подписку")
+        || text.contains("чтобы видеть тексты песен")
+        || text.contains("subscribe to plus")
+        || text.contains("subscribe to yandex plus")
 }
 
 fn local_lyrics(track_id: &str, title: &str, artists: &str) -> Lyrics {
@@ -516,7 +526,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             let artists = parts.next().unwrap_or("");
             let _duration = parts.next();
             let mut lyrics = api.lyrics(track_id).unwrap_or_default();
-            if lyrics.synced.is_empty() && lyrics.text.is_empty() {
+            if lyrics.synced.is_empty() && (lyrics.text.is_empty() || is_subscription_notice(&lyrics)) {
                 lyrics = local_lyrics(track_id, title, artists);
             }
             Ok(Data::Lyrics(lyrics))
@@ -529,6 +539,18 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     gui = replace_once(gui, '            app.set_has_lyrics(t.lyrics);', '            app.set_has_lyrics(true);', "always enable lyrics panel for fallback providers")
     gui = replace_once(gui, '        if t.lyrics && current {', '        if current {', "always show lyrics action for current track")
     gui_path.write_text(gui, encoding="utf-8")
+
+    # The fullscreen SyncLyrics component already provides PulseSync-style timed
+    # line highlighting. Replace the generic empty state with local-file guidance.
+    fullscreen_path = root / "ui" / "fullscreen.slint"
+    fullscreen = fullscreen_path.read_text(encoding="utf-8")
+    fullscreen = replace_once(
+        fullscreen,
+        '        text: T.t("Текста этой песни пока нет");',
+        '        text: T.t("Поместите текст песни в папку lyrics (.lrc или .txt)");',
+        "local lyrics empty state",
+    )
+    fullscreen_path.write_text(fullscreen, encoding="utf-8")
 
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
 
