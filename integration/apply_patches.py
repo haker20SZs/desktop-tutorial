@@ -643,57 +643,67 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     playerbar = replace_once(
         playerbar,
         "                width: c - 188px - self.x - 16px;",
-        "                width: max(0px, c - 188px - self.x - (parent.width >= 1000px ? 136px : 16px));",
+        "                width: max(0px, c - 188px - self.x - (parent.width >= 1000px ? 160px : 16px));",
         "main player title width for volume control",
     )
     playerbar = replace_once(
         playerbar,
         "                width: min(self.content-width, c - 188px - self.x - 16px);",
-        "                width: min(self.content-width, max(0px, c - 188px - self.x - (parent.width >= 1000px ? 136px : 16px)));",
+        "                width: min(self.content-width, max(0px, c - 188px - self.x - (parent.width >= 1000px ? 160px : 16px)));",
         "main player artist width for volume control",
     )
     playerbar = replace_once(
         playerbar,
         "            BarButton { x: c - 188px + 6px; y: 24px; icon: Icons.dislike;",
         """            if on && parent.width >= 1000px: Rectangle {
-                x: c - 330px;
+                // Единая полупрозрачная капсула громкости с жёлтым акцентом.
+                x: c - 340px;
                 y: 24px;
-                width: 128px;
+                width: 136px;
                 height: 32px;
+                border-radius: 16px;
+                background: #ffffff0b;
+                border-width: 1px;
+                border-color: #ffffff16;
                 BarButton {
-                    x: 0px; y: 0px; width: 24px; height: 24px;
+                    x: 7px; y: 4px; width: 24px; height: 24px;
                     icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
                     icon-size: 18px;
+                    ink: #ffffffb8;
                     clicked => { App.toggle-mute(); }
                 }
                 Rectangle {
-                    x: 32px; y: 14px; width: 92px; height: 4px;
+                    x: 38px; y: 14px; width: 88px; height: 4px;
                     border-radius: 2px;
-                    background: #ffffff35;
+                    background: #ffffff38;
                     Rectangle {
                         width: parent.width * max(0, min(1, App.volume));
                         height: parent.height;
                         border-radius: 2px;
-                        background: Theme.controls-color-primary-default-enabled;
+                        background: #ffff00;
                     }
                 }
                 Rectangle {
-                    x: 32px + 92px * max(0, min(1, App.volume)) - 5px;
-                    y: 11px; width: 10px; height: 10px;
-                    border-radius: 5px;
+                    x: 38px + 88px * max(0, min(1, App.volume)) - 6px;
+                    y: 10px; width: 12px; height: 12px;
+                    border-radius: 6px;
                     background: #ffffff;
+                    border-width: 1px;
+                    border-color: #ffffffb0;
+                    drop-shadow-blur: 4px;
+                    drop-shadow-color: #00000080;
                 }
                 volume-ta := TouchArea {
-                    x: 32px; y: 4px; width: 92px; height: 24px;
+                    x: 34px; y: 2px; width: 96px; height: 28px;
                     mouse-cursor: MouseCursor.pointer;
                     pointer-event(e) => {
                         if e.kind == PointerEventKind.down {
-                            App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                            App.set-volume(max(0, min(1, (self.mouse-x - 4px) / 88px)));
                         }
                     }
                     moved => {
                         if self.pressed {
-                            App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                            App.set-volume(max(0, min(1, (self.mouse-x - 4px) / 88px)));
                         }
                     }
                 }
@@ -716,7 +726,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     playerbar = replace_once(
         playerbar,
         "            x: 0;\n            y: parent.height - 2px;\n            width: App.duration > 0 ? parent.width * App.position / App.duration : 0;",
-        "            x: 44px;\n            y: parent.height - 2px;\n            width: max(0px, (parent.width - 44px) * mini-progress);",
+        "            x: 48px;\n            y: parent.height - 4px;\n            width: max(0px, (parent.width - 64px) * mini-progress);\n            height: 3px;\n            border-radius: 2px;\n            background: #ffff00;",
         "mini-player progress follows seek drag",
     )
     playerbar = replace_once(
@@ -729,10 +739,10 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     }
 
     mini-seek-ta := TouchArea {
-        x: 44px;
-        y: root.height - 12px;
-        width: max(0px, root.width - 44px);
-        height: 12px;
+        x: 48px;
+        y: root.height - 14px;
+        width: max(0px, root.width - 64px);
+        height: 16px;
         enabled: on && App.duration > 0;
         mouse-cursor: MouseCursor.pointer;
         pointer-event(e) => {
@@ -751,11 +761,15 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         }
     }
     if on && (mini-seek-ta.has-hover || mini-drag-progress >= 0): Rectangle {
-        x: 44px + max(0px, min(root.width - 52px, (root.width - 44px) * mini-progress)) - 4px;
-        y: root.height - 6px;
-        width: 8px; height: 8px;
-        border-radius: 4px;
-        background: Theme.controls-color-primary-default-enabled;
+        x: 48px + max(0px, min(root.width - 64px, (root.width - 64px) * mini-progress)) - 5px;
+        y: root.height - 9px;
+        width: 10px; height: 10px;
+        border-radius: 5px;
+        background: #ffffff;
+        border-width: 1px;
+        border-color: #ffff00;
+        drop-shadow-blur: 4px;
+        drop-shadow-color: #00000080;
     }
 }
 """,
