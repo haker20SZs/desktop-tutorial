@@ -250,6 +250,153 @@ fn global_keys() -> [(i32, u32, u32); 3] {
 '''
     tray_new = replace_once(tray_new, old_unregister, new_unregister, "configurable hotkey cleanup")
 
+
+    # Modernize the sidebar profile card.
+    navbar_path = root / "ui" / "navbar.slint"
+    navbar = navbar_path.read_text(encoding="utf-8")
+    old_profile = '''// Профиль: аватар 34 в кольце 2px через 2px, имя и «Плюс».
+    Rectangle {
+        x: 15px;
+        y: parent.height - 61px;
+        width: 42px;
+        height: 42px;
+        border-radius: 21px;
+        background: @linear-gradient(135deg, #ff5c4d 0%, #eb469f 35%, #8341ef 70%, #3f68f9 100%);
+        Rectangle {
+            width: 38px;
+            height: 38px;
+            border-radius: 19px;
+            background: Theme.background-color-primary-enabled-basic;
+        }
+        Cover {
+            width: 34px;
+            height: 34px;
+            round: true;
+            source: App.avatar;
+        }
+    }
+    // Клик по профилю открывает меню Яндекс ID.
+    TouchArea {
+        x: 15px;
+        y: parent.height - 61px;
+        width: parent.width - 19px;
+        height: 42px;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { App.account-open = !App.account-open; }
+    }
+    if !c: Text {
+        x: 69px;
+        y: parent.height - 62px;
+        width: parent.width - self.x - 4px;
+        text: App.login;
+        overflow: elide;
+        font-size: Theme.font-size-label-m;
+        font-weight: 500;
+        color: Theme.controls-color-primary-text-enabled-variant;
+    }
+    if App.plus && !c: Rectangle {
+        x: 69px;
+        y: parent.height - 38px;
+        width: 66px;
+        height: 20px;
+        border-radius: 10px;
+        background: @linear-gradient(90deg, #ff5c4d 0%, #eb469f 25%, #8341ef 72%, #4f4cf6 100%);
+        Image { x: 4px; y: 3px; width: 14px; height: 14px; source: Icons.plus-badge; colorize: #fff; }
+        Text { x: 21px; text: T.t("Плюс"); color: #fff; font-size: Theme.font-size-label-m; font-weight: 500; }
+    }
+'''
+    new_profile = '''// Аккуратная карточка профиля с аватаром, подписью и отдельным бейджем Plus.
+    Rectangle {
+        x: 10px;
+        y: parent.height - 58px;
+        width: parent.width - 20px;
+        height: 48px;
+        border-radius: 16px;
+        background: profile-hit.has-hover ? Theme.controls-color-secondary-default-enabled : Theme.background-color-secondary-enabled;
+        animate background { duration: App.motion ? Theme.duration-transition : 0ms; }
+        Rectangle {
+            x: 6px; y: 5px; width: 38px; height: 38px;
+            border-radius: 19px;
+            background: @linear-gradient(135deg, #ff5c4d 0%, #eb469f 35%, #8341ef 70%, #3f68f9 100%);
+            Rectangle { x: 2px; y: 2px; width: 34px; height: 34px; border-radius: 17px; background: Theme.background-color-primary-enabled-basic; }
+            Cover { x: 4px; y: 4px; width: 30px; height: 30px; round: true; source: App.avatar; }
+        }
+        if !c: Text {
+            x: 52px; y: 7px; width: parent.width - 100px; height: 19px;
+            text: App.login == "" || App.login == "None None" ? T.t("Профиль") : App.login;
+            overflow: elide; font-size: Theme.font-size-label-m; font-weight: 650;
+            color: Theme.controls-color-primary-text-enabled-variant;
+        }
+        if !c: Text {
+            x: 52px; y: 26px; width: parent.width - 100px; height: 15px;
+            text: App.plus ? T.t("Яндекс Плюс") : T.t("Аккаунт Яндекс Музыки");
+            overflow: elide; font-size: 11px; color: Theme.controls-color-primary-text-enabled;
+        }
+        if App.plus && !c: Rectangle {
+            x: parent.width - 42px; y: 14px; width: 34px; height: 20px;
+            border-radius: 10px;
+            background: @linear-gradient(90deg, #ff5c4d 0%, #eb469f 25%, #8341ef 72%, #4f4cf6 100%);
+            Text { text: "PLUS"; font-size: 9px; font-weight: 700; color: #ffffff; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        if !App.plus && !c: Icon {
+            x: parent.width - 34px; y: 12px; source: Icons.arrow-right-small;
+            size: 20px; colorize: Theme.controls-color-primary-text-enabled;
+        }
+        profile-hit := TouchArea {
+            mouse-cursor: MouseCursor.pointer;
+            clicked => { App.account-open = !App.account-open; }
+        }
+    }
+'''
+    navbar = replace_once(navbar, old_profile, new_profile, "profile card redesign")
+    navbar_path.write_text(navbar, encoding="utf-8", newline="\\n")
+
+    # Remove Discord status UI and stop its IPC worker; retain old JSON fields for compatibility.
+    account_path = root / "ui" / "account.slint"
+    account = account_path.read_text(encoding="utf-8")
+    account = replace_once(account, '''            SettingItem {
+                title: T.t("Статус в Discord");
+                desc: App.discord-on && App.discord-status != "" ? App.discord-status : T.t("Показывать в профиле Discord, что вы слушаете");
+                toggle: true;
+                on: App.discord-on;
+                clicked => { App.setting("discord"); }
+            }
+''', "", "remove Discord settings row")
+    account_path.write_text(account, encoding="utf-8", newline="\\n")
+
+    state_path = root / "ui" / "state.slint"
+    state = state_path.read_text(encoding="utf-8")
+    state = replace_once(state, '''    // Статус «Слушает» в профиле Discord и что с ним сейчас.
+    in property <bool> discord-on;
+    in property <string> discord-status;
+''', "", "remove Discord UI state")
+    state_path.write_text(state, encoding="utf-8", newline="\\n")
+
+    gui_path = root / "src" / "gui.rs"
+    gui = gui_path.read_text(encoding="utf-8")
+    gui = replace_once(gui, '    discord: Arc<crate::discord::Discord>,\\n', "", "remove Discord context field")
+    gui = replace_once(gui, '''        if app.get_page() == Page::Settings {
+            app.set_discord_status(self.discord.status().into());
+        }
+''', "", "remove Discord status polling")
+    gui = replace_once(gui, '''    let discord = crate::discord::Discord::spawn(
+        player.clone(),
+        crate::discord::DiscordCfg { enabled: cfg.discord_enabled, app_id: cfg.discord_app_id.clone() },
+    );
+    app.set_discord_on(cfg.discord_enabled);
+''', "", "disable Discord runtime")
+    gui = replace_once(gui, '        discord,\\n', "", "remove Discord context initialization")
+    gui = replace_once(gui, '''            "discord" => {
+                let on = !app.get_discord_on();
+                app.set_discord_on(on);
+                self.discord.cfg.lock().unwrap().enabled = on;
+                let mut st = self.st.borrow_mut();
+                st.cfg.discord_enabled = on;
+                st.cfg.save();
+            }
+''', "", "remove Discord settings action")
+    gui_path.write_text(gui, encoding="utf-8", newline="\\n")
+
     api_path.write_text(api_new, encoding="utf-8", newline="\n")
     tray_path.write_text(tray_new, encoding="utf-8", newline="\n")
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
