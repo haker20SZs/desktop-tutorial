@@ -156,6 +156,100 @@ const GLOBAL_KEYS: [(i32, u32, u32); 3] = [
 '''
     tray_new = replace_once(tray_new, old_dispatch, new_dispatch, "global hotkey dispatch")
 
+
+    # Replace fixed PulseSync-style shortcuts with user-configurable bindings.
+    # Config is intentionally separate from config.json to avoid touching auth tokens.
+    old_keys = '''// PulseSync-style global shortcuts, handled by the existing tray window/message loop.
+const GLOBAL_KEYS: [(i32, u32, u32); 3] = [
+    (101, 0x0001 | 0x0002, 0x20), // Ctrl+Alt+Space: play/pause
+    (102, 0x0001 | 0x0002, 0x25), // Ctrl+Alt+Left: previous
+    (103, 0x0001 | 0x0002, 0x27), // Ctrl+Alt+Right: next
+];
+'''
+    new_keys = '''// User-configurable PulseSync-style global shortcuts. The separate hotkeys.json
+// file keeps this feature independent from account credentials and other settings.
+const GLOBAL_KEY_IDS: [i32; 3] = [101, 102, 103];
+
+fn parse_hotkey(value: &str) -> Option<(u32, u32)> {
+    let mut modifiers = 0_u32;
+    let mut key = None;
+    for part in value.split('+').map(|s| s.trim().to_ascii_uppercase()) {
+        match part.as_str() {
+            "CTRL" | "CONTROL" => modifiers |= 0x0002,
+            "ALT" => modifiers |= 0x0001,
+            "SHIFT" => modifiers |= 0x0004,
+            "WIN" | "META" => modifiers |= 0x0008,
+            "SPACE" => key = Some(0x20),
+            "LEFT" => key = Some(0x25),
+            "UP" => key = Some(0x26),
+            "RIGHT" => key = Some(0x27),
+            "DOWN" => key = Some(0x28),
+            "ENTER" => key = Some(0x0D),
+            "TAB" => key = Some(0x09),
+            "ESC" | "ESCAPE" => key = Some(0x1B),
+            "HOME" => key = Some(0x24),
+            "END" => key = Some(0x23),
+            "PAGEUP" => key = Some(0x21),
+            "PAGEDOWN" => key = Some(0x22),
+            s if s.len() == 1 && s.as_bytes()[0].is_ascii_alphanumeric() => key = Some(s.as_bytes()[0] as u32),
+            s if s.starts_with('F') => {
+                let n = s[1..].parse::<u32>().ok()?;
+                if !(1..=24).contains(&n) { return None; }
+                key = Some(0x70 + n - 1);
+            }
+            _ => return None,
+        }
+    }
+    if modifiers == 0 { return None; }
+    Some((modifiers, key?))
+}
+
+fn global_keys() -> [(i32, u32, u32); 3] {
+    let defaults = [
+        (101, 0x0001 | 0x0002, 0x20),
+        (102, 0x0001 | 0x0002, 0x25),
+        (103, 0x0001 | 0x0002, 0x27),
+    ];
+    let path = crate::config::dir().join("hotkeys.json");
+    let settings = std::fs::read_to_string(path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
+    let Some(settings) = settings else { return defaults; };
+    let names = ["play_pause", "previous", "next"];
+    std::array::from_fn(|i| {
+        settings.get(names[i]).and_then(|v| v.as_str())
+            .and_then(parse_hotkey)
+            .map(|(mods, key)| (defaults[i].0, mods, key))
+            .unwrap_or(defaults[i])
+    })
+}
+'''
+    tray_new = replace_once(tray_new, old_keys, new_keys, "configurable hotkey parser")
+
+    old_register = '''        for (id, modifiers, vk) in GLOBAL_KEYS {
+            // If another program owns a combination, Windows simply rejects this binding.
+            RegisterHotKey(hwnd, id, modifiers, vk);
+        }
+'''
+    new_register = '''        for (id, modifiers, vk) in global_keys() {
+            // If another program owns a combination, Windows simply rejects this binding.
+            if RegisterHotKey(hwnd, id, modifiers, vk) == 0 {
+                crate::config::log(format!("не удалось зарегистрировать глобальную клавишу {id}; проверьте hotkeys.json"));
+            }
+        }
+'''
+    tray_new = replace_once(tray_new, old_register, new_register, "configurable hotkey registration")
+
+    old_unregister = '''        for (id, _, _) in GLOBAL_KEYS {
+            UnregisterHotKey(t.hwnd, id);
+        }
+'''
+    new_unregister = '''        for id in GLOBAL_KEY_IDS {
+            UnregisterHotKey(t.hwnd, id);
+        }
+'''
+    tray_new = replace_once(tray_new, old_unregister, new_unregister, "configurable hotkey cleanup")
+
     api_path.write_text(api_new, encoding="utf-8", newline="\n")
     tray_path.write_text(tray_new, encoding="utf-8", newline="\n")
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
