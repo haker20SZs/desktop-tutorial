@@ -2,6 +2,7 @@
 """Apply small, checked native Rust integrations to the pinned yamusic-rs source."""
 
 from pathlib import Path
+import re
 import sys
 
 def replace_once(source: str, old: str, new: str, label: str) -> str:
@@ -396,6 +397,25 @@ fn global_keys() -> [(i32, u32, u32); 3] {
             }
 ''', "", "remove Discord settings action")
     gui_path.write_text(gui, encoding="utf-8")
+
+    # Remove the Discord module entirely, not just its UI/runtime hooks.
+    # First remove Rust module declarations so the deleted source is not compiled.
+    src_root = root / "src"
+    for rust_path in src_root.rglob("*.rs"):
+        rust_source = rust_path.read_text(encoding="utf-8")
+        rust_source_new = re.sub(r"(?m)^\s*(?:pub\s+)?mod\s+discord\s*;\s*\n", "", rust_source)
+        if rust_source_new != rust_source:
+            rust_path.write_text(rust_source_new, encoding="utf-8")
+
+    discord_path = src_root / "discord.rs"
+    if discord_path.exists():
+        discord_path.unlink()
+    remaining_refs = []
+    for rust_path in src_root.rglob("*.rs"):
+        if re.search(r"(?m)\b(?:crate::)?discord::", rust_path.read_text(encoding="utf-8")):
+            remaining_refs.append(str(rust_path.relative_to(root)))
+    if remaining_refs:
+        raise SystemExit("Discord references remain after removal: " + ", ".join(remaining_refs))
 
     api_path.write_text(api_new, encoding="utf-8")
     tray_path.write_text(tray_new, encoding="utf-8")
