@@ -41,13 +41,12 @@ GitHub Release, push a tag named `pulsesync-v0.1.0` (or a later version).
 
 ## Lyrics
 
-The fullscreen lyrics view is available for the current track even when Yandex does not advertise lyrics for it. The client tries sources in this order:
+The fullscreen lyrics view is available for the current track even when Yandex does not advertise lyrics for it. The client tries these sources in order:
 
-1. Yandex Music's own lyrics endpoint (when the account and track are allowed to access it).
-2. A local file in `%APPDATA%\\yamusic-rs\\lyrics\\` (Windows). Name it either `<track-id>.lrc` / `<track-id>.txt` or `<artist> - <title>.lrc` / `.txt`. LRC files retain timestamp synchronization; TXT files are shown as plain text.
-3. LRCLIB's public API, using track title, artist and duration. Availability and matching depend on that external catalogue.
+1. Yandex Music's own lyrics endpoint, when the account and track are allowed to access it.
+2. A user-supplied local file in `%APPDATA%\\yamusic-rs\\lyrics\\` (Windows). Name it either `<track-id>.lrc` / `<track-id>.txt` or `<artist> - <title>.lrc` / `.txt`. LRC files retain timestamp synchronization; TXT files are shown as plain text.
 
-Local files are user-supplied. Use lyrics you have permission to store and display. No subscription checks, DRM, or Yandex access controls are bypassed.
+The local folder is created automatically when lyrics are requested. Use only text you have permission to store and display. No subscription checks, DRM, or Yandex access controls are bypassed.
 
 ## Important service and media limitations
 
