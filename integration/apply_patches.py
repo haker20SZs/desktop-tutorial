@@ -156,8 +156,8 @@ const GLOBAL_KEYS: [(i32, u32, u32); 3] = [
 '''
     tray_new = replace_once(tray_new, old_dispatch, new_dispatch, "global hotkey dispatch")
 
-    api_path.write_text(api_new, encoding="utf-8", newline="\\n")
-    tray_path.write_text(tray_new, encoding="utf-8", newline="\\n")
+    api_path.write_text(api_new, encoding="utf-8", newline="\n")
+    tray_path.write_text(tray_new, encoding="utf-8", newline="\n")
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
 
 if __name__ == "__main__":
