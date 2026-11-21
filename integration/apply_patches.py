@@ -465,6 +465,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     api_path = root / "src" / "api.rs"
     api_new = replace_once(api_new, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
     api_new = replace_once(api_new, "    pub lyrics: bool,\n", "", "remove unused Yandex lyrics availability flag")
+    api_new = replace_once(api_new, '    let li = v.get("lyricsInfo");\n', "", "remove unused lyricsInfo parser variable")
     api_new = replace_once(api_new, '    let flag = |k: &str| li.and_then(|l| l.get(k)).and_then(|x| x.as_bool()).unwrap_or(false);\n', "", "remove unused lyrics availability parser closure")
     api_new = replace_once(api_new, '        lyrics: flag("hasAvailableSyncLyrics") || flag("hasAvailableTextLyrics"),\n', "", "remove lyrics availability initializer")
     api_path.write_text(api_new, encoding="utf-8")
