@@ -420,7 +420,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     # Persistent switches for optional sidebar sections.
     config_path = root / "src" / "config.rs"
     config = config_path.read_text(encoding="utf-8")
-    config = replace_once(config, '    pub navbar_collapsed: bool;\n', '    pub navbar_collapsed: bool;\n    pub show_concerts: bool,\n    pub show_nonmusic: bool,\n', "navigation config fields")
+    config = replace_once(config, '    pub navbar_collapsed: bool,\n', '    pub navbar_collapsed: bool,\n    pub show_concerts: bool,\n    pub show_nonmusic: bool,\n', "navigation config fields")
     config = replace_once(config, '            navbar_collapsed: false,\n', '            navbar_collapsed: false,\n            show_concerts: true,\n            show_nonmusic: true,\n', "navigation config defaults")
     config_path.write_text(config, encoding="utf-8")
 
