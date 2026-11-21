@@ -553,6 +553,27 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
 
+    # Move the volume popup to the lower-left corner and give it a subtle shadow.
+    playerbar_path = root / "ui" / "playerbar.slint"
+    playerbar = playerbar_path.read_text(encoding="utf-8")
+    playerbar = replace_once(
+        playerbar,
+        "        x: root.width - 49px + 16px - self.width / 2;\\n        y: 24px - self.height;\\n",
+        "        x: 16px;\\n        y: root.height - self.height - 16px;\\n",
+        "lower-left volume popup position",
+    )
+    playerbar_path.write_text(playerbar, encoding="utf-8")
+
+    popups_path = root / "ui" / "popups.slint"
+    popups = popups_path.read_text(encoding="utf-8")
+    popups = replace_once(
+        popups,
+        "    border-color: stroke;\\n\\n    property <length> rail-y:",
+        "    border-color: stroke;\\n    drop-shadow-blur: 12px;\\n    drop-shadow-color: #00000066;\\n\\n    property <length> rail-y:",
+        "volume popup shadow",
+    )
+    popups_path.write_text(popups, encoding="utf-8")
+
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
 
 if __name__ == "__main__":
