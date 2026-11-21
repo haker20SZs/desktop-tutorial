@@ -461,6 +461,108 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     gui_path.write_text(gui, encoding="utf-8")
     api_path.write_text(api_new, encoding="utf-8")
     tray_path.write_text(tray_new, encoding="utf-8")
+    # Lyrics fallback: Yandex first, then user files, then LRCLIB's public API.
+    api_path = root / "src" / "api.rs"
+    api = api_path.read_text(encoding="utf-8")
+    api = replace_once(api, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
+
+    net_path = root / "src" / "net.rs"
+    net = net_path.read_text(encoding="utf-8")
+    net = replace_once(net, "fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {", r'''
+fn lyrics_slug(value: &str) -> String {
+    value.chars().map(|c| {
+        if c.is_alphanumeric() || c == ' ' || c == '-' { c } else { '_' }
+    }).collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn fallback_lyrics(track_id: &str, title: &str, artists: &str, duration: u64) -> Lyrics {
+    let mut out = Lyrics::default();
+    let folder = crate::config::dir().join("lyrics");
+    let stem = lyrics_slug(&format!("{artists} - {title}"));
+    for path in [
+        folder.join(format!("{track_id}.lrc")),
+        folder.join(format!("{stem}.lrc")),
+    ] {
+        if let Ok(contents) = std::fs::read_to_string(path) {
+            out.synced = crate::api::parse_lrc(&contents);
+            if !out.synced.is_empty() {
+                out.source = "Локальный файл".into();
+                return out;
+            }
+        }
+    }
+    for path in [
+        folder.join(format!("{track_id}.txt")),
+        folder.join(format!("{stem}.txt")),
+    ] {
+        if let Ok(contents) = std::fs::read_to_string(path) {
+            out.text = contents.lines().map(|line| line.trim_end().to_string()).filter(|line| !line.is_empty()).collect();
+            if !out.text.is_empty() {
+                out.source = "Локальный файл".into();
+                return out;
+            }
+        }
+    }
+
+    if title.trim().is_empty() || artists.trim().is_empty() {
+        return out;
+    }
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .connect_timeout(std::time::Duration::from_secs(4))
+        .user_agent(concat!("yamusic-rs/", env!("CARGO_PKG_VERSION"), " (lyrics fallback)"))
+        .build()
+    {
+        Ok(client) => client,
+        Err(_) => return out,
+    };
+    let response = client.get("https://lrclib.net/api/get")
+        .query(&[
+            ("track_name", title),
+            ("artist_name", artists),
+            ("duration", &duration.to_string()),
+        ])
+        .send();
+    let Ok(response) = response else { return out; };
+    if !response.status().is_success() { return out; }
+    let Ok(value) = response.json::<serde_json::Value>() else { return out; };
+    if let Some(lrc) = value.get("syncedLyrics").and_then(|v| v.as_str()) {
+        out.synced = crate::api::parse_lrc(lrc);
+    }
+    if out.synced.is_empty() {
+        if let Some(plain) = value.get("plainLyrics").and_then(|v| v.as_str()) {
+            out.text = plain.lines().map(str::to_string).collect();
+        }
+    }
+    if !out.synced.is_empty() || !out.text.is_empty() {
+        out.source = "LRCLIB".into();
+    }
+    out
+}
+
+fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fallback loader")
+    net = replace_once(net, '        "lyrics" => api.lyrics(arg).map(Data::Lyrics),', r'''        "lyrics" => {
+            let mut parts = arg.splitn(4, '|');
+            let track_id = parts.next().unwrap_or("");
+            let title = parts.next().unwrap_or("");
+            let artists = parts.next().unwrap_or("");
+            let duration = parts.next().and_then(|v| v.parse::<u64>().ok()).unwrap_or(0);
+            let mut lyrics = api.lyrics(track_id).unwrap_or_default();
+            if lyrics.synced.is_empty() && lyrics.text.is_empty() {
+                lyrics = fallback_lyrics(track_id, title, artists, duration);
+            }
+            Ok(Data::Lyrics(lyrics))
+        },''', "lyrics provider fallback")
+    net_path.write_text(net, encoding="utf-8")
+    api_path.write_text(api, encoding="utf-8")
+
+    gui_path = root / "src" / "gui.rs"
+    gui = gui_path.read_text(encoding="utf-8")
+    gui = replace_once(gui, '        let key = format!("lyrics:{}", t.id);', '        let key = format!("lyrics:{}|{}|{}|{}", t.id, t.title.replace(\\'|\\', " "), t.artists.replace(\\'|\\', " "), t.duration_ms / 1000);', "pass track metadata to lyrics providers")
+    gui = replace_once(gui, '            app.set_has_lyrics(t.lyrics);', '            app.set_has_lyrics(true);', "always enable lyrics panel for fallback providers")
+    gui = replace_once(gui, '        if t.lyrics && current {', '        if current {', "always show lyrics action for current track")
+    gui_path.write_text(gui, encoding="utf-8")
+
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
 
 if __name__ == "__main__":
