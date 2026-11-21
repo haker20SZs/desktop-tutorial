@@ -572,7 +572,74 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     popups_path.write_text(popups, encoding="utf-8")
 
-    print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
+    # The mini-player had its own separate horizontal 80px volume control.
+    # Replace it with the same vertical popup used by the full player.
+    playerbar_path = root / "ui" / "playerbar.slint"
+    playerbar = playerbar_path.read_text(encoding="utf-8")
+    playerbar = replace_once(
+        playerbar,
+        """        // Громкость при наведении: значок выключает звук, полоску можно тянуть.
+        if ta.has-hover || vol-ta.pressed: BarButton {
+            x: parent.width - 172px;
+            y: 2px;
+            width: 24px;
+            height: 24px;
+            icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
+            icon-size: 16px;
+            clicked => { App.toggle-mute(); }
+        }
+        Rectangle {
+            x: parent.width - 144px;
+            y: 2px;
+            width: 80px;
+            height: 24px;
+            visible: ta.has-hover || vol-ta.pressed;
+            property <float> v: max(0, min(1, App.volume));
+            Rectangle { y: 10px; height: 4px; border-radius: 2px; background: #ffffff33; }
+            Rectangle { x: 0; y: 10px; width: parent.width * v; height: 4px; border-radius: 2px; background: #ffffffcc; }
+            Rectangle {
+                x: parent.width * v - 5px;
+                y: 7px;
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: vol-ta.has-hover || vol-ta.pressed ? Theme.controls-color-primary-default-enabled : #ffffff;
+            }
+            vol-ta := TouchArea {
+                mouse-cursor: MouseCursor.pointer;
+                pointer-event(e) => {
+                    if e.kind == PointerEventKind.down {
+                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                    }
+                }
+                moved => {
+                    if self.pressed {
+                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                    }
+                }
+            }
+        }""",
+        """        // Вертикальная громкость над динамиком и в мини-плеере.
+        mini-vol-popup := VolumePopup {
+            x: parent.width - 184px;
+            y: 2px - self.height;
+            visible: ta.has-hover || mini-vol-popup.hovered;
+            glass: false;
+        }
+        if ta.has-hover || mini-vol-popup.hovered: BarButton {
+            x: parent.width - 172px;
+            y: 2px;
+            width: 24px;
+            height: 24px;
+            icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
+            icon-size: 16px;
+            clicked => { App.toggle-mute(); }
+        }""",
+        "mini-player vertical volume popup",
+    )
+    playerbar_path.write_text(playerbar, encoding="utf-8")
+
+    print("Applied native PulseSync-style hotkeys, vertical volume controls, and safe GET/HEAD retries.")
 
 if __name__ == "__main__":
     main()
