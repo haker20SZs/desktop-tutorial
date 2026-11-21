@@ -560,14 +560,14 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     popups = popups_path.read_text(encoding="utf-8")
     popups = replace_once(
         popups,
-        "    width: 44px;\\n    height: glass ? 210px : 216px;\\n",
-        "    width: 48px;\\n    height: glass ? 210px : 216px;\\n",
+        "    width: 44px;\n    height: glass ? 210px : 216px;\n",
+        "    width: 48px;\n    height: glass ? 210px : 216px;\n",
         "vertical volume slider dimensions",
     )
     popups = replace_once(
         popups,
-        "    border-color: stroke;\\n\\n    property <length> rail-y:",
-        "    border-color: stroke;\\n    drop-shadow-blur: 12px;\\n    drop-shadow-color: #00000066;\\n\\n    property <length> rail-y:",
+        "    border-color: stroke;\n\n    property <length> rail-y:",
+        "    border-color: stroke;\n    drop-shadow-blur: 12px;\n    drop-shadow-color: #00000066;\n\n    property <length> rail-y:",
         "volume popup shadow",
     )
     popups_path.write_text(popups, encoding="utf-8")
