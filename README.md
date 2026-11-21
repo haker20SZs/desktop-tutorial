@@ -8,6 +8,18 @@ set of PulseSync-style features ported into the native Rust application.
 
 - **One native executable:** the build starts from the upstream Rust/Slint client; it does not launch or bundle a second Electron app.
 - **Configurable global shortcuts:** default Ctrl+Alt+Space = play/pause, Ctrl+Alt+Left = previous, Ctrl+Alt+Right = next. Edit `%APPDATA%\\yamusic-rs\\hotkeys.json` to change them; supported modifiers are CTRL, ALT, SHIFT, WIN, and keys include letters, digits, F1-F24, SPACE, arrows, ENTER, TAB, ESC, HOME, END, PAGEUP and PAGEDOWN. Each binding must include at least one modifier. Hardware media keys remain enabled.
+
+Example `hotkeys.json`:
+
+```json
+{
+  "play_pause": "CTRL+ALT+SPACE",
+  "previous": "CTRL+ALT+LEFT",
+  "next": "CTRL+ALT+RIGHT"
+}
+```
+
+Create the file in `%APPDATA%\\yamusic-rs\\` and restart the app for changes to take effect.
 - **Safer reconnects:** only idempotent GET/HEAD API requests are retried after transport failures and transient HTTP statuses (408, 425, 429, 500, 502, 503, 504), with a short exponential backoff and support for Retry-After. Login failures and write requests are not retried.
 - Discord Rich Presence, tray, mini-player and media keys are already provided by yamusic-rs.
 
