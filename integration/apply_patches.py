@@ -417,6 +417,36 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     if remaining_refs:
         raise SystemExit("Discord references remain after removal: " + ", ".join(remaining_refs))
 
+    # Persistent switches for optional sidebar sections.
+    config_path = root / "src" / "config.rs"
+    config = config_path.read_text(encoding="utf-8")
+    config = replace_once(config, '    pub navbar_collapsed: bool;\n', '    pub navbar_collapsed: bool;\n    pub show_concerts: bool,\n    pub show_nonmusic: bool,\n', "navigation config fields")
+    config = replace_once(config, '            navbar_collapsed: false,\n', '            navbar_collapsed: false,\n            show_concerts: true,\n            show_nonmusic: true,\n', "navigation config defaults")
+    config_path.write_text(config, encoding="utf-8")
+
+    state_path = root / "ui" / "state.slint"
+    state = state_path.read_text(encoding="utf-8")
+    state = replace_once(state, '    in property <bool> nav-collapsed;\n', '    in property <bool> nav-collapsed;\n    in property <bool> show-concerts: true;\n    in property <bool> show-nonmusic: true;\n', "navigation UI state")
+    state_path.write_text(state, encoding="utf-8")
+
+    navbar_path = root / "ui" / "navbar.slint"
+    navbar = navbar_path.read_text(encoding="utf-8")
+    navbar = replace_once(navbar, '        NavLink { icon: Icons.nav-concerts; icon-selected: Icons.nav-concerts-selected; text: T.t("Концерты"); page: Page.concerts; }\n        NavLink { icon: Icons.nav-nonmusic; icon-selected: Icons.nav-nonmusic-selected; text: T.t("Книги и подкасты"); page: Page.nonmusic; }\n', '        NavLink { visible: App.show-concerts; icon: Icons.nav-concerts; icon-selected: Icons.nav-concerts-selected; text: T.t("Концерты"); page: Page.concerts; }\n        NavLink { visible: App.show-nonmusic; icon: Icons.nav-nonmusic; icon-selected: Icons.nav-nonmusic-selected; text: T.t("Книги и подкасты"); page: Page.nonmusic; }\n', "conditional sidebar links")
+    navbar = replace_once(navbar, '        y: 76px + 6 * 48px + 5 * 4px + 24px;\n', '        y: 76px + (4 + (App.show-concerts ? 1 : 0) + (App.show-nonmusic ? 1 : 0)) * 48px + (3 + (App.show-concerts ? 1 : 0) + (App.show-nonmusic ? 1 : 0)) * 4px + 24px;\n', "sidebar pin offset")
+    navbar_path.write_text(navbar, encoding="utf-8")
+
+    account_path = root / "ui" / "account.slint"
+    account = account_path.read_text(encoding="utf-8")
+    anchor = '            SettingItem {\n                title: T.t("Меньше ИИ");\n                desc: T.t("В рекомендациях будет реже встречаться музыка, созданная с помощью ИИ");\n                toggle: true;\n                on: App.less-ai;\n                clicked => { App.setting("less-ai"); }\n            }\n'
+    additions = anchor + '            SettingItem { title: T.t("Концерты"); desc: T.t("Показывать раздел в боковом меню"); toggle: true; on: App.show-concerts; clicked => { App.setting("show-concerts"); } }\n            SettingItem { title: T.t("Книги и подкасты"); desc: T.t("Показывать раздел в боковом меню"); toggle: true; on: App.show-nonmusic; clicked => { App.setting("show-nonmusic"); } }\n'
+    account = replace_once(account, anchor, additions, "section visibility settings")
+    account_path.write_text(account, encoding="utf-8")
+
+    gui_path = root / "src" / "gui.rs"
+    gui = gui_path.read_text(encoding="utf-8")
+    gui = replace_once(gui, '    app.set_nav_collapsed(cfg.navbar_collapsed);\n', '    app.set_nav_collapsed(cfg.navbar_collapsed);\n    app.set_show_concerts(cfg.show_concerts);\n    app.set_show_nonmusic(cfg.show_nonmusic);\n', "initialize section visibility")
+    gui = replace_once(gui, '            "about" => sys::open_url(env!("CARGO_PKG_REPOSITORY")),\n', '            "show-concerts" => { let on = !app.get_show_concerts(); app.set_show_concerts(on); let mut st = self.st.borrow_mut(); st.cfg.show_concerts = on; st.cfg.save(); if !on && app.get_page() == Page::Concerts { drop(st); self.navigate(Page::Trends, None, true); } }\n            "show-nonmusic" => { let on = !app.get_show_nonmusic(); app.set_show_nonmusic(on); let mut st = self.st.borrow_mut(); st.cfg.show_nonmusic = on; st.cfg.save(); if !on && app.get_page() == Page::Nonmusic { drop(st); self.navigate(Page::Trends, None, true); } }\n            "about" => sys::open_url(env!("CARGO_PKG_REPOSITORY")),\n', "section visibility actions")
+    gui_path.write_text(gui, encoding="utf-8")
     api_path.write_text(api_new, encoding="utf-8")
     tray_path.write_text(tray_new, encoding="utf-8")
     print("Applied native PulseSync-style hotkeys and safe GET/HEAD retries.")
