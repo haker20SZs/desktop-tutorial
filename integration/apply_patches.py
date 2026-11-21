@@ -312,7 +312,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
         width: parent.width - 20px;
         height: 48px;
         border-radius: 16px;
-        background: profile-hit.has-hover ? Theme.controls-color-secondary-default-enabled : Theme.background-color-secondary-enabled;
+        background: profile-hit.has-hover ? Theme.controls-color-secondary-default-hovered : Theme.controls-color-secondary-default-enabled;
         animate background { duration: App.motion ? Theme.duration-transition : 0ms; }
         Rectangle {
             x: 6px; y: 5px; width: 38px; height: 38px;
