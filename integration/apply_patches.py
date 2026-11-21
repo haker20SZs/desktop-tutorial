@@ -725,20 +725,12 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     playerbar = replace_once(
         playerbar,
-        "            x: 0;\n            y: parent.height - 2px;\n            width: App.duration > 0 ? parent.width * App.position / App.duration : 0;",
-        "            x: 48px;\n            y: parent.height - 4px;\n            width: max(0px, (parent.width - 64px) * mini-progress);\n            height: 3px;\n            border-radius: 2px;\n            background: #ffff00;",
-        "mini-player progress follows seek drag",
-    )
-    # Add a subtle inactive rail behind the yellow progress fill.
-    playerbar = replace_once(
-        playerbar,
         """        if on: Rectangle {
-            x: 48px;
-            y: parent.height - 4px;
-            width: max(0px, (parent.width - 64px) * mini-progress);
-            height: 3px;
-            border-radius: 2px;
-            background: #ffff00;
+            x: 0;
+            y: parent.height - 2px;
+            width: App.duration > 0 ? parent.width * App.position / App.duration : 0;
+            height: 2px;
+            background: Theme.controls-color-primary-default-enabled;
         }""",
         """        if on: Rectangle {
             x: 48px;
@@ -756,9 +748,8 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             border-radius: 2px;
             background: #ffff00;
         }""",
-        "mini-player seek rail",
+        "mini-player progress follows seek drag",
     )
-
     playerbar = replace_once(
         playerbar,
         """        if ta.has-hover: BarButton { x: parent.width - 28px; y: 2px; width: 24px; height: 24px; icon: Icons.close-xs; icon-size: 16px; clicked => { App.close(); } }
