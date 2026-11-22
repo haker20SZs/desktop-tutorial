@@ -542,17 +542,43 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     gui = replace_once(gui, '        if t.lyrics && current {', '        if current {', "always show lyrics action for current track")
     gui_path.write_text(gui, encoding="utf-8")
 
-    # The fullscreen SyncLyrics component already provides PulseSync-style timed
-    # line highlighting. Replace the generic empty state with local-file guidance.
+    # Remove every visible entry point for song lyrics; keep playback controls intact.
+    playerbar_path = root / "ui" / "playerbar.slint"
+    playerbar = playerbar_path.read_text(encoding="utf-8")
+    playerbar = replace_once(
+        playerbar,
+        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\\n',
+        "",
+        "remove lyrics button from main player",
+    )
+    playerbar_path.write_text(playerbar, encoding="utf-8")
+
     fullscreen_path = root / "ui" / "fullscreen.slint"
     fullscreen = fullscreen_path.read_text(encoding="utf-8")
     fullscreen = replace_once(
         fullscreen,
+        """            RoundButton {
+                x: 168px;
+                y: 320px;
+                icon: Icons.lyrics-m;
+                enabled: App.has-lyrics;
+                ink: App.fs-mode == 2 ? #ffffff : #ffffff80;
+                clicked => { App.fs-mode = App.fs-mode == 2 ? 0 : 2; }
+            }
+""",
+        "",
+        "remove lyrics button from fullscreen player",
+    )
+    fullscreen = replace_once(
+        fullscreen,
         '        text: T.t("Текста этой песни пока нет");',
-        '        text: T.t("Поместите текст песни в папку lyrics (.lrc или .txt)");',
-        "local lyrics empty state",
+        '        text: "";',
+        "remove lyrics empty-state message",
     )
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
+
+    # The fullscreen SyncLyrics component already provides PulseSync-style timed
+    # line highlighting. Replace the generic empty state with local-file guidance.
 
 
 
