@@ -739,11 +739,12 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
 
     # Mini-player: larger artwork, calmer metadata spacing, separate volume and
     # transport rows, and a seek rail with enough breathing room at the bottom.
-    playerbar = replace_once(playerbar,
-        "x: 12px;\n            y: 12px;\n            width: 64px;\n            height: 64px;",
+    playerbar = replace_once(
+        playerbar,
         "x: 16px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
         "x: 64px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
-        "mini-player cover moved right to clear volume column")
+        "mini-player cover moved right to clear volume column",
+    )
     playerbar = replace_once(playerbar,
         "x: on ? 88px : 16px;\n            width: parent.width - self.x - 144px;\n            alignment: center;\n            spacing: 2px;",
         "x: on ? 160px : 20px;\n            y: 0px;\n            width: parent.width - self.x - 184px;\n            alignment: center;\n            spacing: 7px;",
