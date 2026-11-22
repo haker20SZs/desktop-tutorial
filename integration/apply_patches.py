@@ -578,6 +578,242 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
 
 
+
+    # Remove the "About app" row from Settings without changing other settings.
+    account_path = root / "ui" / "account.slint"
+    account = account_path.read_text(encoding="utf-8")
+    account = replace_once(
+        account,
+        '''            SettingItem {
+                title: T.t("О приложении");
+                desc: App.app-name + " · " + T.t("Версия ") + App.version;
+                clicked => { App.setting("about"); }
+            }
+''',
+        "",
+        "remove About app settings row",
+    )
+    account_path.write_text(account, encoding="utf-8")
+
+    # Collection: add a clear visual hero and a softly elevated liked-tracks panel.
+    collection_path = root / "ui" / "collection.slint"
+    collection = collection_path.read_text(encoding="utf-8")
+    collection = replace_once(
+        collection,
+        '''            Text {
+                text: T.t("Коллекция");
+                font-family: "YS Music Headline";
+                font-size: Theme.font-size-headline-xl;
+                font-weight: 700;
+                color: Theme.controls-color-primary-text-enabled-variant;
+            }
+            HorizontalLayout {
+                alignment: start;
+                Text {
+                    text: T.t("У вашей музыки есть ");
+                    font-size: Theme.font-size-label-m;
+                    font-weight: 500;
+                    color: Theme.controls-color-primary-text-enabled;
+                }
+                Text {
+                    text: T.t("цвет");
+                    font-size: Theme.font-size-label-m;
+                    font-weight: 500;
+                    color: #d317c7;
+                }
+            }
+''',
+        '''            // Большой заголовок с коротким пояснением вместо двух разрозненных строк.
+            Rectangle {
+                height: 116px;
+                border-radius: 24px;
+                background: @linear-gradient(110deg, #263c60 0%, #594078 55%, #9b4c78 100%);
+                clip: true;
+                Rectangle {
+                    x: parent.width - 154px;
+                    y: -54px;
+                    width: 210px;
+                    height: 210px;
+                    border-radius: 105px;
+                    background: #ffffff0d;
+                }
+                Rectangle {
+                    x: parent.width - 104px;
+                    y: 44px;
+                    width: 94px;
+                    height: 94px;
+                    border-radius: 47px;
+                    background: #ffffff0d;
+                }
+                Text {
+                    x: 24px;
+                    y: 20px;
+                    text: T.t("Коллекция");
+                    font-family: "YS Music Headline";
+                    font-size: 30px;
+                    font-weight: 700;
+                    color: #ffffff;
+                }
+                Text {
+                    x: 25px;
+                    y: 64px;
+                    text: T.t("Вся твоя музыка — в одном месте");
+                    font-size: Theme.font-size-label-m;
+                    font-weight: 500;
+                    color: #ffffffc9;
+                }
+            }
+''',
+        "collection hero redesign",
+    )
+    collection = replace_once(
+        collection,
+        '''            Rectangle {
+                height: 336px + 52px;
+                Rectangle {
+                    y: 52px;
+''',
+        '''            Rectangle {
+                height: 388px;
+                border-radius: 20px;
+                background: Theme.controls-color-secondary-default-enabled;
+                Rectangle {
+                    x: 18px;
+                    y: 18px;
+''',
+        "collection liked panel redesign",
+    )
+    collection_path.write_text(collection, encoding="utf-8")
+
+    # Mini Player: volume controls move to the left of track information.
+    # Add a dedicated seek hit-area at the bottom so it does not drag the window.
+    playerbar_path = root / "ui" / "playerbar.slint"
+    playerbar = playerbar_path.read_text(encoding="utf-8")
+    playerbar = replace_once(
+        playerbar,
+        '''export component MiniPlayer inherits Rectangle {
+    property <bool> on: App.has-track;
+    background: on ? App.tint : Theme.background-color-primary-enabled-player;
+''',
+        '''export component MiniPlayer inherits Rectangle {
+    property <bool> on: App.has-track;
+    property <float> drag-progress: -1;
+    property <float> progress: App.duration > 0 ? App.position / App.duration : 0;
+    property <float> shown: drag-progress >= 0 ? drag-progress : progress;
+    background: on ? App.tint : Theme.background-color-primary-enabled-player;
+''',
+        "mini player seek state",
+    )
+    playerbar = replace_once(
+        playerbar,
+        '''        if on: Rectangle {
+            x: 0;
+            y: parent.height - 2px;
+            width: App.duration > 0 ? parent.width * App.position / App.duration : 0;
+            height: 2px;
+            background: Theme.controls-color-primary-default-enabled;
+        }
+''',
+        '''        if on: Rectangle {
+            x: 0;
+            y: parent.height - 3px;
+            width: parent.width * root.shown;
+            height: 3px;
+            background: #ffffff30;
+            Rectangle {
+                width: parent.width * root.shown;
+                height: parent.height;
+                background: Theme.controls-color-primary-default-enabled;
+            }
+        }
+''',
+        "mini player seek progress bar",
+    )
+    playerbar = replace_once(
+        playerbar,
+        '''        VerticalLayout {
+            x: on ? 88px : 16px;
+            width: parent.width - self.x - 144px;
+''',
+        '''        VerticalLayout {
+            x: on ? 176px : 16px;
+            width: parent.width - self.x - 136px;
+''',
+        "move mini player track info right of volume",
+    )
+    playerbar = replace_once(
+        playerbar,
+        '''        // Громкость при наведении: значок выключает звук, полоску можно тянуть.
+        if ta.has-hover || vol-ta.pressed: BarButton {
+            x: parent.width - 172px;
+            y: 2px;
+            width: 24px;
+            height: 24px;
+            icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
+            icon-size: 16px;
+            clicked => { App.toggle-mute(); }
+        }
+        Rectangle {
+            x: parent.width - 144px;
+            y: 2px;
+            width: 80px;
+            height: 24px;
+            visible: ta.has-hover || vol-ta.pressed;
+''',
+        '''        // Громкость теперь слева от названия трека; значок всегда доступен.
+        BarButton {
+            x: 88px;
+            y: 28px;
+            width: 24px;
+            height: 24px;
+            icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
+            icon-size: 16px;
+            clicked => { App.toggle-mute(); }
+        }
+        Rectangle {
+            x: 116px;
+            y: 28px;
+            width: 52px;
+            height: 24px;
+            visible: ta.has-hover || vol-ta.pressed;
+''',
+        "move mini player volume controls left",
+    )
+    playerbar = replace_once(
+        playerbar,
+        '''        if ta.has-hover: BarButton { x: parent.width - 52px; y: 2px; width: 24px; height: 24px; icon: Icons.fullscreen; icon-size: 16px; clicked => { App.toggle-mini(); } }
+''',
+        '''        // Отдельная интерактивная полоса перемотки внизу мини-плеера.
+        seek-ta := TouchArea {
+            x: 0;
+            y: parent.height - 12px;
+            width: parent.width;
+            height: 12px;
+            enabled: on && App.duration > 0;
+            mouse-cursor: MouseCursor.pointer;
+            pointer-event(e) => {
+                if e.button == PointerEventButton.left && e.kind == PointerEventKind.down {
+                    root.drag-progress = max(0, min(1, self.mouse-x / root.width));
+                    accept
+                }
+                if e.button == PointerEventButton.left && e.kind == PointerEventKind.up && root.drag-progress >= 0 {
+                    App.seek(root.drag-progress * App.duration);
+                    root.drag-progress = -1;
+                    accept
+                }
+            }
+            moved => {
+                if self.pressed {
+                    root.drag-progress = max(0, min(1, self.mouse-x / root.width));
+                }
+            }
+        }
+        if ta.has-hover: BarButton { x: parent.width - 52px; y: 2px; width: 24px; height: 24px; icon: Icons.fullscreen; icon-size: 16px; clicked => { App.toggle-mini(); } }
+''',
+        "mini player seek interaction",
+    )
+    playerbar_path.write_text(playerbar, encoding="utf-8")
+
     print("Applied native PulseSync-style hotkeys, safe GET/HEAD retries, and other integrations.")
 
 if __name__ == "__main__":
