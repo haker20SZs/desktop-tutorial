@@ -577,10 +577,6 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
 
-    # The fullscreen SyncLyrics component already provides PulseSync-style timed
-    # line highlighting. Replace the generic empty state with local-file guidance.
-
-
 
     print("Applied native PulseSync-style hotkeys, safe GET/HEAD retries, and other integrations.")
 
