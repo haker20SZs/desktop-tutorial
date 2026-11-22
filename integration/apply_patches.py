@@ -621,8 +621,11 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         }""",
         """        // Значок громкости закреплён в нижнем левом углу мини-плеера.
         mini-vol-popup := VolumePopup {
-            x: 0px;
+            // Компактная вертикальная шкала помещается в отдельной левой колонке.
+            x: 4px;
             y: parent.height - 26px - self.height;
+            width: 40px;
+            height: 92px;
             visible: ta.has-hover || mini-vol-popup.hovered;
             glass: false;
         }
@@ -739,11 +742,12 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     playerbar = replace_once(playerbar,
         "x: 12px;\n            y: 12px;\n            width: 64px;\n            height: 64px;",
         "x: 16px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
-        "mini-player larger cover")
+        "x: 64px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
+        "mini-player cover moved right to clear volume column")
     playerbar = replace_once(playerbar,
         "x: on ? 88px : 16px;\n            width: parent.width - self.x - 144px;\n            alignment: center;\n            spacing: 2px;",
-        "x: on ? 120px : 20px;\n            y: 0px;\n            width: parent.width - self.x - 184px;\n            alignment: center;\n            spacing: 7px;",
-        "mini-player metadata spacing")
+        "x: on ? 160px : 20px;\n            y: 0px;\n            width: parent.width - self.x - 184px;\n            alignment: center;\n            spacing: 7px;",
+        "mini-player metadata spacing after volume column")
     playerbar = replace_once(playerbar,
         "BarButton { x: parent.width - 136px; y: 28px;",
         "BarButton { x: parent.width - 160px; y: 72px;",
