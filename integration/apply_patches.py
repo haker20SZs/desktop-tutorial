@@ -741,7 +741,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     # transport rows, and a seek rail with enough breathing room at the bottom.
     playerbar = replace_once(
         playerbar,
-        "x: 16px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
+        "x: 12px;\n            y: 12px;\n            width: 64px;\n            height: 64px;",
         "x: 64px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
         "mini-player cover moved right to clear volume column",
     )
