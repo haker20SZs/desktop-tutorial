@@ -693,7 +693,6 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         playerbar,
         '''export component MiniPlayer inherits Rectangle {
     property <bool> on: App.has-track;
-    property <float> drag-progress: -1;
     background: on ? App.tint : Theme.background-color-primary-enabled-player;
 ''',
         '''export component MiniPlayer inherits Rectangle {
