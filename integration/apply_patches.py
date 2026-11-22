@@ -802,8 +802,8 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     app = app_path.read_text(encoding="utf-8")
     app = replace_once(
         app,
-        "min-width: App.mini ? 320px : 960px;\\n    min-height: App.mini ? 88px : 640px;",
-        "min-width: App.mini ? 420px : 960px;\\n    min-height: App.mini ? 128px : 640px;",
+        "min-width: App.mini ? 320px : 960px;\n    min-height: App.mini ? 88px : 640px;",
+        "min-width: App.mini ? 420px : 960px;\n    min-height: App.mini ? 128px : 640px;",
         "roomier mini-player window constraints",
     )
     app_path.write_text(app, encoding="utf-8")
@@ -811,48 +811,48 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     # Mini-player: larger artwork, calmer metadata spacing, separate volume and
     # transport rows, and a seek rail with enough breathing room at the bottom.
     playerbar = replace_once(playerbar,
-        "x: 12px;\\n            y: 12px;\\n            width: 64px;\\n            height: 64px;",
-        "x: 16px;\\n            y: 20px;\\n            width: 88px;\\n            height: 88px;",
+        "x: 12px;\n            y: 12px;\n            width: 64px;\n            height: 64px;",
+        "x: 16px;\n            y: 20px;\n            width: 88px;\n            height: 88px;",
         "mini-player larger cover")
     playerbar = replace_once(playerbar,
-        "x: on ? 88px : 16px;\\n            width: parent.width - self.x - 144px;\\n            alignment: center;\\n            spacing: 2px;",
-        "x: on ? 120px : 20px;\\n            y: 0px;\\n            width: parent.width - self.x - 184px;\\n            alignment: center;\\n            spacing: 7px;",
+        "x: on ? 88px : 16px;\n            width: parent.width - self.x - 144px;\n            alignment: center;\n            spacing: 2px;",
+        "x: on ? 120px : 20px;\n            y: 0px;\n            width: parent.width - self.x - 184px;\n            alignment: center;\n            spacing: 7px;",
         "mini-player metadata spacing")
     playerbar = replace_once(playerbar,
         "BarButton { x: parent.width - 136px; y: 28px;",
         "BarButton { x: parent.width - 160px; y: 72px;",
         "mini-player previous control position")
     playerbar = replace_once(playerbar,
-        "x: parent.width - 96px;\\n            y: 24px;",
-        "x: parent.width - 112px;\\n            y: 68px;",
+        "x: parent.width - 96px;\n            y: 24px;",
+        "x: parent.width - 112px;\n            y: 68px;",
         "mini-player play control position")
     playerbar = replace_once(playerbar,
         "BarButton { x: parent.width - 48px; y: 28px;",
         "BarButton { x: parent.width - 64px; y: 72px;",
         "mini-player next control position")
     playerbar = replace_once(playerbar,
-        "x: parent.width - 172px;\\n            y: 2px;",
-        "x: parent.width - 184px;\\n            y: 8px;",
+        "x: parent.width - 172px;\n            y: 2px;",
+        "x: parent.width - 184px;\n            y: 8px;",
         "mini-player volume icon position")
     playerbar = replace_once(playerbar,
-        "x: parent.width - 144px;\\n            y: 2px;\\n            width: 80px;",
-        "x: parent.width - 156px;\\n            y: 8px;\\n            width: 96px;",
+        "x: parent.width - 144px;\n            y: 2px;\n            width: 80px;",
+        "x: parent.width - 156px;\n            y: 8px;\n            width: 96px;",
         "mini-player volume slider position")
     playerbar = replace_once(playerbar,
-        "x: 48px;\\n            y: parent.height - 4px;\\n            width: max(0px, parent.width - 64px);",
-        "x: 120px;\\n            y: parent.height - 8px;\\n            width: max(0px, parent.width - 144px);",
+        "x: 48px;\n            y: parent.height - 4px;\n            width: max(0px, parent.width - 64px);",
+        "x: 120px;\n            y: parent.height - 8px;\n            width: max(0px, parent.width - 144px);",
         "mini-player seek rail background layout")
     playerbar = replace_once(playerbar,
-        "x: 48px;\\n            y: parent.height - 4px;\\n            width: max(0px, (parent.width - 64px) * mini-progress);",
-        "x: 120px;\\n            y: parent.height - 8px;\\n            width: max(0px, (parent.width - 144px) * mini-progress);",
+        "x: 48px;\n            y: parent.height - 4px;\n            width: max(0px, (parent.width - 64px) * mini-progress);",
+        "x: 120px;\n            y: parent.height - 8px;\n            width: max(0px, (parent.width - 144px) * mini-progress);",
         "mini-player seek rail fill layout")
     playerbar = replace_once(playerbar,
-        "x: 48px;\\n        y: root.height - 14px;\\n        width: max(0px, root.width - 64px);\\n        height: 16px;",
-        "x: 120px;\\n        y: root.height - 18px;\\n        width: max(0px, root.width - 144px);\\n        height: 20px;",
+        "x: 48px;\n        y: root.height - 14px;\n        width: max(0px, root.width - 64px);\n        height: 16px;",
+        "x: 120px;\n        y: root.height - 18px;\n        width: max(0px, root.width - 144px);\n        height: 20px;",
         "mini-player seek hit target layout")
     playerbar = replace_once(playerbar,
-        "x: 48px + max(0px, min(root.width - 64px, (root.width - 64px) * mini-progress)) - 5px;\\n        y: root.height - 9px;",
-        "x: 120px + max(0px, min(root.width - 144px, (root.width - 144px) * mini-progress)) - 5px;\\n        y: root.height - 13px;",
+        "x: 48px + max(0px, min(root.width - 64px, (root.width - 64px) * mini-progress)) - 5px;\n        y: root.height - 9px;",
+        "x: 120px + max(0px, min(root.width - 144px, (root.width - 144px) * mini-progress)) - 5px;\n        y: root.height - 13px;",
         "mini-player seek thumb layout")
     playerbar_path.write_text(playerbar, encoding="utf-8")
 
