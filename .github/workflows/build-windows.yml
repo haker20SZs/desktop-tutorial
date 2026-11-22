@@ -1,5 +1,5 @@
 name: Build Windows EXE
-# Rebuild after the lower-left volume popup integration update.
+# Rebuild after Mini Player volume layout and patch-helper fixes.
 
 on:
   push:
