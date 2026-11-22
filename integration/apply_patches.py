@@ -812,6 +812,266 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     )
     playerbar_path.write_text(playerbar, encoding="utf-8")
 
+
+    # Completely remove automatic update checks, download/install flow, and app version labels.
+    main_path = root / "src" / "main.rs"
+    main = main_path.read_text(encoding="utf-8")
+    main = replace_once(main, '''    // После обновления старая версия ещё закрывается: ждём её до 15 секунд.
+    let after_update = std::env::args().any(|a| a == update::AFTER_UPDATE);
+    let mut claimed = sys::claim_instance();
+    for _ in 0..60 {
+        if claimed || !after_update {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        claimed = sys::claim_instance();
+    }
+''', '''    let claimed = sys::claim_instance();
+''', "remove updater-specific relaunch wait")
+    main = replace_once(main, "mod update;\n", "", "remove update module declaration")
+    main = replace_once(main, "    update::cleanup();\n", "", "remove old updater executable cleanup")
+    main_path.write_text(main, encoding="utf-8")
+
+    gui_path = root / "src" / "gui.rs"
+    gui = gui_path.read_text(encoding="utf-8")
+    gui = replace_once(gui, '''thread_local! {
+    /// Найденный новый релиз — для кнопки «Обновить».
+    static UPDATE: RefCell<Option<crate::update::Release>> = const { RefCell::new(None) };
+}
+
+/// Проверка обновлений в фоне (первая — через 10 с после запуска) и кнопка «Обновить» в тосте.
+fn start_updates(ui: &AppWindow) {
+    let weak = ui.as_weak();
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_secs(10));
+        loop {
+            if !crate::update::ENABLED.load(Ordering::Relaxed) {
+                std::thread::sleep(Duration::from_secs(60));
+                continue;
+            }
+            match crate::update::check() {
+                Ok(Some(r)) => {
+                    let weak = weak.clone();
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = weak.upgrade() {
+                            ui.global::<App>().set_update_version(r.version.clone().into());
+                            UPDATE.with(|u| *u.borrow_mut() = Some(r));
+                        }
+                    });
+                }
+                Ok(None) => {}
+                Err(e) => log(format!("обновления: {e}")),
+            }
+            std::thread::sleep(crate::update::POLL);
+        }
+    });
+    ui.global::<App>().on_update_changes(|| {
+        if let Some(r) = UPDATE.with(|u| u.borrow().clone()) {
+            sys::open_url(&crate::update::changes_url(&r.version));
+        }
+    });
+    ui.global::<App>().on_update_install(|| {
+        let Some(r) = UPDATE.with(|u| u.borrow().clone()) else { return };
+        // В релизе нет exe — обновить можно только руками, ведём на страницу.
+        if r.exe.is_none() {
+            sys::open_url(&r.page);
+            return;
+        }
+        with_ctx(|c| c.ui().global::<App>().set_update_busy(true));
+        std::thread::spawn(move || {
+            let res = crate::update::install(&r).and_then(|exe| crate::update::relaunch(&exe));
+            let _ = slint::invoke_from_event_loop(move || match res {
+                // Новая версия ждёт, пока мы закроемся.
+                Ok(()) => quit(),
+                Err(e) => {
+                    log(format!("обновление: {e}"));
+                    with_ctx(|c| {
+                        c.ui().global::<App>().set_update_busy(false);
+                        c.toast(format!("Не удалось обновить: {e}"));
+                    });
+                    sys::open_url(&r.page);
+                }
+            });
+        });
+    });
+}
+
+''', "", "remove background updater and install callbacks")
+    gui = replace_once(gui, "    crate::update::ENABLED.store(cfg.check_updates, Ordering::Relaxed);\n    start_updates(&ui);\n", "", "remove updater startup")
+    gui = replace_once(gui, "    app.set_version(env!(\"CARGO_PKG_VERSION\").into());\n", "", "remove app version display binding")
+    gui = replace_once(gui, "    app.set_check_updates(cfg.check_updates);\n", "", "remove update setting initialization")
+    gui = replace_once(gui, "                Event::Updates => sys::open_url(concat!(env!(\"CARGO_PKG_REPOSITORY\"), \"/releases\")),\n", "", "remove tray update event handler")
+    gui = replace_once(gui, '''            "check-updates" => {
+                let on = !app.get_check_updates();
+                app.set_check_updates(on);
+                crate::update::ENABLED.store(on, Ordering::Relaxed);
+                if !on {
+                    app.set_update_version(SharedString::new());
+                    UPDATE.with(|u| *u.borrow_mut() = None);
+                }
+                let mut st = self.st.borrow_mut();
+                st.cfg.check_updates = on;
+                st.cfg.save();
+            }
+''', "", "remove update settings action")
+    gui_path.write_text(gui, encoding="utf-8")
+
+    config_path = root / "src" / "config.rs"
+    config = config_path.read_text(encoding="utf-8")
+    config = replace_once(config, "    /// Раз в полчаса спрашивать GitHub о новой версии.\n    pub check_updates: bool,\n", "", "remove update preference from config")
+    config = replace_once(config, "            check_updates: true,\n", "", "remove update preference default")
+    config_path.write_text(config, encoding="utf-8")
+
+    tray_path = root / "src" / "tray.rs"
+    tray = tray_path.read_text(encoding="utf-8")
+    tray = replace_once(tray, "    Updates,\n", "", "remove tray update event")
+    tray = replace_once(tray, '        add(menu, 2, &tr("Проверить обновления"), true);\n', "", "remove tray update menu item")
+    tray = replace_once(tray, "            2 => Event::Updates,\n", "", "remove tray update menu dispatch")
+    tray_path.write_text(tray, encoding="utf-8")
+
+    account_path = root / "ui" / "account.slint"
+    account = account_path.read_text(encoding="utf-8")
+    account = replace_once(account, '''            SettingItem {
+                title: T.t("Проверять обновления");
+                desc: T.t("Раз в полчаса спрашивать GitHub, нет ли новой версии");
+                toggle: true;
+                on: App.check-updates;
+                clicked => { App.setting("check-updates"); }
+            }
+''', "", "remove update setting row")
+    account_path.write_text(account, encoding="utf-8")
+
+    app_path = root / "ui" / "app.slint"
+    app = app_path.read_text(encoding="utf-8")
+    app = replace_once(app, '''    // «Доступна версия …» — как NotificationUpdate оригинала: та же плашка уведомления,
+    // справа кнопка «Обновить». Висит, пока не обновятся.
+    if App.update-version != "": Rectangle {
+        property <float> k: App.motion ? 0 : 1;
+        init => { k = 1; }
+        animate k { duration: App.motion ? 250ms : 0ms; easing: ease-out; }
+        opacity: k;
+        x: (parent.width - self.width) / 2;
+        y: Theme.spacer-size-m - (1 - k) * 16px;
+        width: min(parent.width * 0.9, update-text.preferred-width + Theme.spacer-size-l + Theme.spacer-size-m + changes.width + Theme.spacer-size-m + update-btn.width + Theme.spacer-size-xxs);
+        height: update-btn.height + 2 * Theme.spacer-size-xxs;
+        border-radius: Theme.radius-size-l;
+        background: Theme.background-color-primary-enabled-popover;
+        border-width: 1px;
+        border-color: Theme.controls-color-secondary-outline-selected;
+        drop-shadow-blur: 20px;
+        drop-shadow-offset-y: 1px;
+        drop-shadow-color: #0000003d;
+        update-text := Text {
+            x: Theme.spacer-size-l;
+            width: changes.x - self.x - Theme.spacer-size-m;
+            text: T.t("Доступна версия ") + App.update-version;
+            overflow: elide;
+            vertical-alignment: center;
+            color: Theme.controls-color-primary-text-enabled-variant;
+            font-size: Theme.font-size-label-m;
+            font-weight: 500;
+        }
+        // Ссылка на список изменений, чтобы перед обновлением было видно, что поменялось в коде.
+        changes := Text {
+            x: update-btn.x - self.width - Theme.spacer-size-m;
+            text: T.t("Что изменилось");
+            vertical-alignment: center;
+            color: changes-ta.has-hover ? Theme.controls-color-primary-text-enabled-variant : Theme.controls-color-primary-text-enabled;
+            font-size: Theme.font-size-label-m;
+            font-weight: 500;
+            changes-ta := TouchArea {
+                mouse-cursor: MouseCursor.pointer;
+                clicked => { App.update-changes(); }
+            }
+        }
+        update-btn := Rectangle {
+            x: parent.width - self.width - Theme.spacer-size-xxs;
+            width: max(126px, update-label.preferred-width + 2 * Theme.spacer-size-l);
+            height: 32px;
+            border-radius: self.height / 2;
+            background: update-ta.pressed ? Theme.controls-color-secondary-default-pressed
+                : update-ta.has-hover ? Theme.controls-color-secondary-default-hovered
+                : Theme.controls-color-secondary-default-enabled;
+            opacity: App.update-busy ? 0.6 : 1;
+            update-label := Text {
+                text: App.update-busy ? T.t("Загрузка…") : T.t("Обновить");
+                color: Theme.controls-color-secondary-on-default-enabled;
+                font-size: Theme.font-size-label-m;
+                font-weight: 500;
+            }
+            update-ta := TouchArea {
+                enabled: !App.update-busy;
+                mouse-cursor: MouseCursor.pointer;
+                clicked => { App.update-install(); }
+            }
+        }
+    }
+
+''', "", "remove update notification banner")
+    app_path.write_text(app, encoding="utf-8")
+
+    state_path = root / "ui" / "state.slint"
+    state = state_path.read_text(encoding="utf-8")
+    state = replace_once(state, '''    // Новая версия на GitHub (src/update.rs): пусто — обновлений нет.
+    in property <string> update-version;
+    // Установщик скачивается.
+    in property <bool> update-busy;
+    callback update-install();
+    // «Что изменилось»: сравнение запущенной и новой версии на GitHub.
+    callback update-changes();
+    // «Проверять обновления» в настройках.
+    in property <bool> check-updates: true;
+''', "", "remove updater UI state")
+    state = replace_once(state, "    in property <string> version;\n", "", "remove application version state")
+    state_path.write_text(state, encoding="utf-8")
+
+    build_path = root / "build.rs"
+    build = build_path.read_text(encoding="utf-8")
+    build = replace_once(build, '        let script = format!("#pragma code_page(65001)\\n1 ICON \\"app.ico\\"\\n{}", version_info());\n', '        let script = "#pragma code_page(65001)\\n1 ICON \\"app.ico\\"\\n".to_string();\n', "remove executable version resource")
+    version_fn = '''    fn version_info() -> String {
+        let version = std::env::var("CARGO_PKG_VERSION").unwrap();
+        let exe = std::env::var("CARGO_PKG_NAME").unwrap();
+        let nums: Vec<&str> = version.split(['.', '-']).take(3).collect();
+        let num = format!("{},0", nums.join(","));
+        format!(
+            r#"1 VERSIONINFO
+FILEVERSION {num}
+PRODUCTVERSION {num}
+FILEOS 0x40004
+FILETYPE 0x1
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "041904B0"
+    BEGIN
+      VALUE "FileDescription", "{APP_NAME}"
+      VALUE "ProductName", "{APP_NAME}"
+      VALUE "FileVersion", "{version}"
+      VALUE "ProductVersion", "{version}"
+      VALUE "InternalName", "{exe}"
+      VALUE "OriginalFilename", "{exe}.exe"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x419, 1200
+  END
+END
+"#
+        )
+    }
+
+'''
+    build = replace_once(build, version_fn, "", "remove Windows executable version metadata generator")
+    build_path.write_text(build, encoding="utf-8")
+
+    update_path = root / "src" / "update.rs"
+    if not update_path.is_file():
+        raise SystemExit("updater source file missing; expected pinned upstream v1.1.4")
+    update_path.unlink()
+
+    print("Removed updater, update controls, app version UI, and executable version metadata.")
+
     print("Applied native PulseSync-style hotkeys, safe GET/HEAD retries, and other integrations.")
 
 if __name__ == "__main__":
