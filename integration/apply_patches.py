@@ -838,7 +838,8 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             }
         }
 ''',
-        "horizontal mini player volume fader",
+        "",
+        "remove volume slider from mini player",
     )
     playerbar = replace_once(
         playerbar,
