@@ -830,14 +830,8 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         "BarButton { x: parent.width - 48px; y: 28px;",
         "BarButton { x: parent.width - 64px; y: 72px;",
         "mini-player next control position")
-    playerbar = replace_once(playerbar,
-        "x: parent.width - 172px;\n            y: 2px;",
-        "x: parent.width - 184px;\n            y: 8px;",
-        "mini-player volume icon position")
-    playerbar = replace_once(playerbar,
-        "x: parent.width - 144px;\n            y: 2px;\n            width: 80px;",
-        "x: parent.width - 156px;\n            y: 8px;\n            width: 96px;",
-        "mini-player volume slider position")
+    # The old horizontal volume slider was replaced above by VolumePopup;
+    # do not apply positional edits to controls that no longer exist.
     playerbar = replace_once(playerbar,
         "x: 48px;\n            y: parent.height - 4px;\n            width: max(0px, parent.width - 64px);",
         "x: 120px;\n            y: parent.height - 8px;\n            width: max(0px, parent.width - 144px);",
