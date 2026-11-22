@@ -794,12 +794,10 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             pointer-event(e) => {
                 if e.button == PointerEventButton.left && e.kind == PointerEventKind.down {
                     root.drag-progress = max(0, min(1, self.mouse-x / root.width));
-                    accept
                 }
                 if e.button == PointerEventButton.left && e.kind == PointerEventKind.up && root.drag-progress >= 0 {
                     App.seek(root.drag-progress * App.duration);
                     root.drag-progress = -1;
-                    accept
                 }
             }
             moved => {
