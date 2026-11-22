@@ -1,5 +1,5 @@
 name: Build Windows EXE
-# Rebuild after Mini Player volume layout and patch-helper fixes.
+# Rebuild after Mini Player upstream anchor correction.
 
 on:
   push:
