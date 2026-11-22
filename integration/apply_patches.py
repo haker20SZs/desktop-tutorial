@@ -871,7 +871,56 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
 ''',
         "mini player seek interaction",
     )
+    # Mini Player: remove the speaker icon, leaving the volume slider.
+    playerbar = replace_once(
+        playerbar,
+        '''        // Громкость теперь слева от названия трека; значок всегда доступен.
+        BarButton {
+            x: 88px;
+            y: 36px;
+            width: 24px;
+            height: 24px;
+            icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
+            icon-size: 16px;
+            clicked => { App.toggle-mute(); }
+        }
+''',
+        "",
+        "remove speaker icon from mini player",
+    )
     playerbar_path.write_text(playerbar, encoding="utf-8")
+
+    # Main Player: make the volume popup horizontal and place it above the speaker button.
+    popups_path = root / "ui" / "popups.slint"
+    popups = popups_path.read_text(encoding="utf-8")
+    popup_start = popups.index("export component VolumePopup inherits Rectangle {")
+    popup_end = popups.index("\nexport component MenuRow", popup_start)
+    popups = popups[:popup_start] + """export component VolumePopup inherits Rectangle {
+    in property <brush> fill: #1a1a1a;
+    in property <brush> stroke: #4d4d4d;
+    in property <bool> glass;
+    out property <bool> hovered: ta.has-hover || ta.pressed;
+    width: glass ? 180px : 176px;
+    height: 44px;
+    border-radius: 22px;
+    background: glass ? #ffffff14 : fill;
+    border-width: glass ? 0 : 1px;
+    border-color: stroke;
+    property <length> rail-x: 14px;
+    property <length> rail-w: self.width - 2 * rail-x;
+    property <float> v: max(0, min(1, App.volume));
+    Rectangle { x: rail-x; y: (parent.height - 4px) / 2; width: rail-w; height: 4px; border-radius: 2px; background: #ffffff1f; }
+    Rectangle { x: rail-x; y: (parent.height - 4px) / 2; width: rail-w * v; height: 4px; border-radius: 2px; background: glass ? #ffffffcc : ta.has-hover || ta.pressed ? Theme.controls-color-primary-default-enabled : #ffffffcc; animate background { duration: App.motion ? 150ms : 0ms; } }
+    if !glass: Rectangle { x: rail-x + rail-w * v - 6px; y: (parent.height - 12px) / 2; width: 12px; height: 12px; border-radius: 6px; background: ta.has-hover || ta.pressed ? Theme.controls-color-primary-default-enabled : #ffffff; animate background { duration: App.motion ? 150ms : 0ms; } }
+    ta := TouchArea {
+        mouse-cursor: MouseCursor.pointer;
+        pointer-event(e) => { if e.kind == PointerEventKind.down { App.set-volume(max(0, min(1, (self.mouse-x - root.rail-x) / root.rail-w))); } }
+        moved => { if self.pressed { App.set-volume(max(0, min(1, (self.mouse-x - root.rail-x) / root.rail-w))); } }
+        scroll-event(e) => { App.set-volume(max(0, min(1, App.volume + (e.delta-y > 0 ? 0.05 : -0.05)))); accept }
+    }
+}
+""" + popups[popup_end:]
+    popups_path.write_text(popups, encoding="utf-8")
 
 
     # Completely remove automatic update checks, download/install flow, and app version labels.
