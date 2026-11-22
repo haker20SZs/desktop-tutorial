@@ -755,7 +755,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         '''        // Громкость теперь слева от названия трека; значок всегда доступен.
         BarButton {
             x: 88px;
-            y: 32px;
+            y: 36px;
             width: 24px;
             height: 24px;
             icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
