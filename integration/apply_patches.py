@@ -807,17 +807,17 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         }
 ''',
         '''        Rectangle {
-            x: 126px;
-            y: 8px;
-            width: 4px;
-            height: 48px;
+            x: 116px;
+            y: 42px;
+            width: 52px;
+            height: 4px;
             visible: ta.has-hover || vol-ta.pressed;
             property <float> v: max(0, min(1, App.volume));
-            Rectangle { width: 4px; height: parent.height; border-radius: 2px; background: #ffffff33; }
-            Rectangle { y: parent.height * (1 - v); width: 4px; height: parent.height * v; border-radius: 2px; background: #ffffffcc; }
+            Rectangle { width: parent.width; height: 4px; border-radius: 2px; background: #ffffff33; }
+            Rectangle { width: parent.width * v; height: 4px; border-radius: 2px; background: #ffffffcc; }
             Rectangle {
-                x: -3px;
-                y: parent.height * (1 - v) - 5px;
+                x: parent.width * v - 5px;
+                y: -3px;
                 width: 10px;
                 height: 10px;
                 border-radius: 5px;
@@ -827,18 +827,18 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
                 mouse-cursor: MouseCursor.pointer;
                 pointer-event(e) => {
                     if e.kind == PointerEventKind.down {
-                        App.set-volume(max(0, min(1, 1 - self.mouse-y / self.height)));
+                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
                     }
                 }
                 moved => {
                     if self.pressed {
-                        App.set-volume(max(0, min(1, 1 - self.mouse-y / self.height)));
+                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
                     }
                 }
             }
         }
 ''',
-        "vertical mini player volume fader",
+        "horizontal mini player volume fader",
     )
     playerbar = replace_once(
         playerbar,
