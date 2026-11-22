@@ -771,6 +771,75 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
 ''',
         "move mini player volume controls left",
     )
+    # Convert the volume control from a horizontal track to a vertical fader.
+    playerbar = replace_once(
+        playerbar,
+        '''        Rectangle {
+            x: 116px;
+            y: 32px;
+            width: 52px;
+            height: 24px;
+            visible: ta.has-hover || vol-ta.pressed;
+            property <float> v: max(0, min(1, App.volume));
+            Rectangle { y: 10px; height: 4px; border-radius: 2px; background: #ffffff33; }
+            Rectangle { x: 0; y: 10px; width: parent.width * v; height: 4px; border-radius: 2px; background: #ffffffcc; }
+            Rectangle {
+                x: parent.width * v - 5px;
+                y: 7px;
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: vol-ta.has-hover || vol-ta.pressed ? Theme.controls-color-primary-default-enabled : #ffffff;
+            }
+            vol-ta := TouchArea {
+                mouse-cursor: MouseCursor.pointer;
+                pointer-event(e) => {
+                    if e.kind == PointerEventKind.down {
+                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                    }
+                }
+                moved => {
+                    if self.pressed {
+                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
+                    }
+                }
+            }
+        }
+''',
+        '''        Rectangle {
+            x: 126px;
+            y: 8px;
+            width: 4px;
+            height: 48px;
+            visible: ta.has-hover || vol-ta.pressed;
+            property <float> v: max(0, min(1, App.volume));
+            Rectangle { width: 4px; height: parent.height; border-radius: 2px; background: #ffffff33; }
+            Rectangle { y: parent.height * (1 - v); width: 4px; height: parent.height * v; border-radius: 2px; background: #ffffffcc; }
+            Rectangle {
+                x: -3px;
+                y: parent.height * (1 - v) - 5px;
+                width: 10px;
+                height: 10px;
+                border-radius: 5px;
+                background: vol-ta.has-hover || vol-ta.pressed ? Theme.controls-color-primary-default-enabled : #ffffff;
+            }
+            vol-ta := TouchArea {
+                mouse-cursor: MouseCursor.pointer;
+                pointer-event(e) => {
+                    if e.kind == PointerEventKind.down {
+                        App.set-volume(max(0, min(1, 1 - self.mouse-y / self.height)));
+                    }
+                }
+                moved => {
+                    if self.pressed {
+                        App.set-volume(max(0, min(1, 1 - self.mouse-y / self.height)));
+                    }
+                }
+            }
+        }
+''',
+        "vertical mini player volume fader",
+    )
     playerbar = replace_once(
         playerbar,
         '''        if ta.has-hover: BarButton { x: parent.width - 52px; y: 2px; width: 24px; height: 24px; icon: Icons.fullscreen; icon-size: 16px; clicked => { App.toggle-mini(); } }
