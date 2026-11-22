@@ -1063,6 +1063,7 @@ END
 
 '''
     build = replace_once(build, version_fn, "", "remove Windows executable version metadata generator")
+    build = replace_once(build, "    use super::APP_NAME;\n", "", "remove unused APP_NAME import")
     build_path.write_text(build, encoding="utf-8")
 
     update_path = root / "src" / "update.rs"
