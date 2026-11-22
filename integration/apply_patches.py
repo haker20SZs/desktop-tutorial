@@ -1070,6 +1070,27 @@ END
         raise SystemExit("updater source file missing; expected pinned upstream v1.1.4")
     update_path.unlink()
 
+
+    wave_path = root / "ui" / "wave.slint"
+    wave = wave_path.read_text(encoding="utf-8")
+    wave = replace_once(wave, '''    // Версия в правом нижнем углу, как у официального приложения.
+    Rectangle {
+        x: parent.width - self.width;
+        y: parent.height - 38px;
+        width: ver.preferred-width + 16px;
+        height: 26px;
+        border-radius: 16px;
+        background: #ffffff14;
+        ver := Text {
+            text: App.version;
+            font-size: Theme.font-size-label-s;
+            font-weight: 500;
+            color: #ffffff80;
+        }
+    }
+''', "", "remove version label from wave screen")
+    wave_path.write_text(wave, encoding="utf-8")
+
     print("Removed updater, update controls, app version UI, and executable version metadata.")
 
     print("Applied native PulseSync-style hotkeys, safe GET/HEAD retries, and other integrations.")
