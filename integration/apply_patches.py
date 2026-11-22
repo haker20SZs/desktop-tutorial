@@ -693,6 +693,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         playerbar,
         '''export component MiniPlayer inherits Rectangle {
     property <bool> on: App.has-track;
+    property <float> drag-progress: -1;
     background: on ? App.tint : Theme.background-color-primary-enabled-player;
 ''',
         '''export component MiniPlayer inherits Rectangle {
@@ -714,30 +715,22 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             background: Theme.controls-color-primary-default-enabled;
         }
 ''',
-        '''        if on: Rectangle {
-            x: 0;
-            y: parent.height - 3px;
-            width: parent.width * root.shown;
-            height: 3px;
-            background: #ffffff30;
-            Rectangle {
-                width: parent.width * root.shown;
-                height: parent.height;
-                background: Theme.controls-color-primary-default-enabled;
-            }
-        }
-''',
-        "mini player seek progress bar",
+        "",
+        "remove mini player track progress bar",
     )
     playerbar = replace_once(
         playerbar,
         '''        VerticalLayout {
             x: on ? 88px : 16px;
             width: parent.width - self.x - 144px;
+            alignment: center;
+            spacing: 2px;
 ''',
         '''        VerticalLayout {
             x: on ? 176px : 16px;
             width: parent.width - self.x - 136px;
+            alignment: center;
+            spacing: 0px;
 ''',
         "move mini player track info right of volume",
     )
@@ -763,7 +756,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         '''        // Громкость теперь слева от названия трека; значок всегда доступен.
         BarButton {
             x: 88px;
-            y: 28px;
+            y: 32px;
             width: 24px;
             height: 24px;
             icon: App.volume <= 0 ? Icons.volume-off : Icons.volume;
@@ -772,7 +765,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         }
         Rectangle {
             x: 116px;
-            y: 28px;
+            y: 32px;
             width: 52px;
             height: 24px;
             visible: ta.has-hover || vol-ta.pressed;
