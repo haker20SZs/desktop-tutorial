@@ -551,6 +551,21 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
         "",
         "remove lyrics button from main player",
     )
+    # Put the horizontal volume slider on the right side, directly beside the speaker.
+    playerbar = replace_once(
+        playerbar,
+        '''    vol-pop := VolumePopup {
+        x: root.width - 49px + 16px - self.width / 2;
+        y: 24px - self.height;
+        visible: vol-open;
+    }''',
+        '''    vol-pop := VolumePopup {
+        x: root.width - 49px - self.width - 8px;
+        y: 24px - self.height / 2;
+        visible: vol-open;
+    }''',
+        "align main player volume slider beside speaker",
+    )
     playerbar_path.write_text(playerbar, encoding="utf-8")
 
     fullscreen_path = root / "ui" / "fullscreen.slint"
@@ -726,12 +741,12 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             spacing: 2px;
 ''',
         '''        VerticalLayout {
-            x: on ? 176px : 16px;
+            x: on ? 160px : 16px;
             width: parent.width - self.x - 136px;
             alignment: center;
             spacing: 0px;
 ''',
-        "move mini player track info right of volume",
+        "shift mini player track info slightly left",
     )
     playerbar = replace_once(
         playerbar,
