@@ -548,8 +548,8 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     playerbar = replace_once(
         playerbar,
         '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\n',
-        "",
-        "remove lyrics button from main player",
+        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\n',
+        "restore original main player lyrics button",
     )
     playerbar_path.write_text(playerbar, encoding="utf-8")
 
@@ -566,14 +566,22 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
                 clicked => { App.fs-mode = App.fs-mode == 2 ? 0 : 2; }
             }
 """,
-        "",
-        "remove lyrics button from fullscreen player",
+        """            RoundButton {
+                x: 168px;
+                y: 320px;
+                icon: Icons.lyrics-m;
+                enabled: App.has-lyrics;
+                ink: App.fs-mode == 2 ? #ffffff : #ffffff80;
+                clicked => { App.fs-mode = App.fs-mode == 2 ? 0 : 2; }
+            }
+""",
+        "restore original fullscreen lyrics button",
     )
     fullscreen = replace_once(
         fullscreen,
         '        text: T.t("Текста этой песни пока нет");',
-        '        text: "";',
-        "remove lyrics empty-state message",
+        '        text: T.t("Текста этой песни пока нет");',
+        "restore original lyrics empty-state message",
     )
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
 
