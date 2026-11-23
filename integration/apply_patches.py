@@ -728,18 +728,18 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
     playerbar = replace_once(
         playerbar,
         '''        VerticalLayout {
-            x: on ? 88px : 16px;
-            width: parent.width - self.x - 144px;
-            alignment: center;
-            spacing: 2px;
-''',
-        '''        VerticalLayout {
             x: on ? 72px : 16px;
             width: parent.width - self.x - 136px;
             alignment: center;
             spacing: 0px;
 ''',
-        "move mini player track info further left",
+        '''        VerticalLayout {
+            x: on ? 88px : 16px;
+            width: parent.width - self.x - 144px;
+            alignment: center;
+            spacing: 2px;
+''',
+        "restore original Mini Player track text layout",
     )
     playerbar = replace_once(
         playerbar,
