@@ -771,7 +771,7 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
 ''',
         "move mini player volume controls left",
     )
-    # Convert the volume control from a horizontal track to a vertical fader.
+    # Remove the Mini Player volume slider completely.
     playerbar = replace_once(
         playerbar,
         '''        Rectangle {
@@ -786,38 +786,6 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
             Rectangle {
                 x: parent.width * v - 5px;
                 y: 7px;
-                width: 10px;
-                height: 10px;
-                border-radius: 5px;
-                background: vol-ta.has-hover || vol-ta.pressed ? Theme.controls-color-primary-default-enabled : #ffffff;
-            }
-            vol-ta := TouchArea {
-                mouse-cursor: MouseCursor.pointer;
-                pointer-event(e) => {
-                    if e.kind == PointerEventKind.down {
-                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
-                    }
-                }
-                moved => {
-                    if self.pressed {
-                        App.set-volume(max(0, min(1, self.mouse-x / self.width)));
-                    }
-                }
-            }
-        }
-''',
-        '''        Rectangle {
-            x: 116px;
-            y: 42px;
-            width: 52px;
-            height: 4px;
-            visible: ta.has-hover || vol-ta.pressed;
-            property <float> v: max(0, min(1, App.volume));
-            Rectangle { width: parent.width; height: 4px; border-radius: 2px; background: #ffffff33; }
-            Rectangle { width: parent.width * v; height: 4px; border-radius: 2px; background: #ffffffcc; }
-            Rectangle {
-                x: parent.width * v - 5px;
-                y: -3px;
                 width: 10px;
                 height: 10px;
                 border-radius: 5px;
