@@ -464,10 +464,13 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     # Remove the unused lyrics flag from the Track model and parser.
     api_path = root / "src" / "api.rs"
     api = api_path.read_text(encoding="utf-8")
-    api = replace_once(api, "    pub lyrics: bool,\\n", "", "remove unused Track lyrics field")
-    api = replace_once(api, '    let li = v.get("lyricsInfo");\\n', "", "remove lyricsInfo parser")
-    api = replace_once(api, '    let flag = |k: &str| li.and_then(|l| l.get(k)).and_then(|x| x.as_bool()).unwrap_or(false);\\n', "", "remove unused lyrics flag parser")
-    api = replace_once(api, '        lyrics: flag("hasAvailableSyncLyrics") || flag("hasAvailableTextLyrics"),\\n', "", "remove lyrics field initialization")
+    # Whitespace-tolerant cleanup for upstream formatting changes.
+    api, field_count = re.subn(r"(?m)^[ \t]*pub lyrics: bool,[ \t]*\r?\n", "", api)
+    api, info_count = re.subn(r'(?m)^[ \t]*let li = v\.get\("lyricsInfo"\);[ \t]*\r?\n', "", api)
+    api, flag_count = re.subn(r"(?m)^[ \t]*let flag = \|k: &str\| li\.and_then\(\|l\| l\.get\(k\)\)\.and_then\(\|x\| x\.as_bool\(\)\)\.unwrap_or\(false\);[ \t]*\r?\n", "", api)
+    api, init_count = re.subn(r'(?m)^[ \t]*lyrics: flag\("hasAvailableSyncLyrics"\) \|\| flag\("hasAvailableTextLyrics"\),[ \t]*\r?\n', "", api)
+    if field_count + info_count + flag_count + init_count == 0:
+        raise SystemExit("lyrics cleanup: no matching Track/parser declarations found")
     api_path.write_text(api, encoding="utf-8")
 
     # Disable and remove all song-lyrics entry points and loading.
