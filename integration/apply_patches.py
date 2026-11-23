@@ -653,22 +653,7 @@ fn global_keys() -> [(i32, u32, u32); 3] {
         "",
         "remove mini player track progress bar",
     )
-    playerbar = replace_once(
-        playerbar,
-        '''        VerticalLayout {
-            x: on ? 72px : 16px;
-            width: parent.width - self.x - 136px;
-            alignment: center;
-            spacing: 0px;
-''',
-        '''        VerticalLayout {
-            x: on ? 88px : 16px;
-            width: parent.width - self.x - 144px;
-            alignment: center;
-            spacing: 2px;
-''',
-        "restore original Mini Player track text layout",
-    )
+    # Upstream v1.1.4 already has the original Mini Player text layout (x=88px, spacing=2px).
     playerbar = replace_once(
         playerbar,
         '''        // Громкость при наведении: значок выключает звук, полоску можно тянуть.
