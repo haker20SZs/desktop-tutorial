@@ -461,6 +461,15 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     gui_path.write_text(gui, encoding="utf-8")
     api_path.write_text(api_new, encoding="utf-8")
     tray_path.write_text(tray_new, encoding="utf-8")
+    # Remove the unused lyrics flag from the Track model and parser.
+    api_path = root / "src" / "api.rs"
+    api = api_path.read_text(encoding="utf-8")
+    api = replace_once(api, "    pub lyrics: bool,\\n", "", "remove unused Track lyrics field")
+    api = replace_once(api, '    let li = v.get("lyricsInfo");\\n', "", "remove lyricsInfo parser")
+    api = replace_once(api, '    let flag = |k: &str| li.and_then(|l| l.get(k)).and_then(|x| x.as_bool()).unwrap_or(false);\\n', "", "remove unused lyrics flag parser")
+    api = replace_once(api, '        lyrics: flag("hasAvailableSyncLyrics") || flag("hasAvailableTextLyrics"),\\n', "", "remove lyrics field initialization")
+    api_path.write_text(api, encoding="utf-8")
+
     # Disable and remove all song-lyrics entry points and loading.
     gui_path = root / "src" / "gui.rs"
     gui = gui_path.read_text(encoding="utf-8")
