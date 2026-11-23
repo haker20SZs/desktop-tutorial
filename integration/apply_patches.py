@@ -483,14 +483,14 @@ fn global_keys() -> [(i32, u32, u32); 3] {
         "",
         "remove lyrics from track context menu",
     )
-    gui = replace_once(gui, '            "lyrics" => self.open_fullscreen(2),\\n', "", "remove lyrics menu action")
+    gui = replace_once(gui, '            "lyrics" => self.open_fullscreen(2),\n', "", "remove lyrics menu action")
     gui_path.write_text(gui, encoding="utf-8")
 
     playerbar_path = root / "ui" / "playerbar.slint"
     playerbar = playerbar_path.read_text(encoding="utf-8")
     playerbar = replace_once(
         playerbar,
-        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\\n',
+        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\n',
         "",
         "remove main player lyrics button",
     )
