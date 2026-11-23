@@ -461,95 +461,38 @@ fn global_keys() -> [(i32, u32, u32); 3] {
     gui_path.write_text(gui, encoding="utf-8")
     api_path.write_text(api_new, encoding="utf-8")
     tray_path.write_text(tray_new, encoding="utf-8")
-    # Lyrics fallback: Yandex first, then user-supplied local files.
-    api_path = root / "src" / "api.rs"
-    api_new = replace_once(api_new, "fn parse_lrc(text: &str) -> Vec<SyncLine> {", "pub(crate) fn parse_lrc(text: &str) -> Vec<SyncLine> {", "expose LRC parser")
-    api_new = replace_once(api_new, "    pub lyrics: bool,\n", "", "remove unused Yandex lyrics availability flag")
-    api_new = replace_once(api_new, '    let li = v.get("lyricsInfo");\n', "", "remove unused lyricsInfo parser variable")
-    api_new = replace_once(api_new, '    let flag = |k: &str| li.and_then(|l| l.get(k)).and_then(|x| x.as_bool()).unwrap_or(false);\n', "", "remove unused lyrics availability parser closure")
-    api_new = replace_once(api_new, '        lyrics: flag("hasAvailableSyncLyrics") || flag("hasAvailableTextLyrics"),\n', "", "remove lyrics availability initializer")
-    api_path.write_text(api_new, encoding="utf-8")
-
-    net_path = root / "src" / "net.rs"
-    net = net_path.read_text(encoding="utf-8")
-    net = replace_once(net, "fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {", r'''
-fn lyrics_slug(value: &str) -> String {
-    value.chars().map(|c| {
-        if c.is_alphanumeric() || c == ' ' || c == '-' { c } else { '_' }
-    }).collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-fn is_subscription_notice(lyrics: &Lyrics) -> bool {
-    let text = lyrics.text.join(" ").to_lowercase();
-    text.contains("подключите подписку")
-        || text.contains("чтобы видеть тексты песен")
-        || text.contains("subscribe to plus")
-        || text.contains("subscribe to yandex plus")
-}
-
-fn local_lyrics(track_id: &str, title: &str, artists: &str) -> Lyrics {
-    let mut out = Lyrics::default();
-    let folder = crate::config::dir().join("lyrics");
-    let _ = std::fs::create_dir_all(&folder);
-    let stem = lyrics_slug(&format!("{artists} - {title}"));
-    for path in [
-        folder.join(format!("{track_id}.lrc")),
-        folder.join(format!("{stem}.lrc")),
-    ] {
-        if let Ok(contents) = std::fs::read_to_string(path) {
-            out.synced = crate::api::parse_lrc(&contents);
-            if !out.synced.is_empty() {
-                out.source = "Локальный файл".into();
-                return out;
-            }
-        }
-    }
-    for path in [
-        folder.join(format!("{track_id}.txt")),
-        folder.join(format!("{stem}.txt")),
-    ] {
-        if let Ok(contents) = std::fs::read_to_string(path) {
-            out.text = contents.lines().map(|line| line.trim_end().to_string()).filter(|line| !line.is_empty()).collect();
-            if !out.text.is_empty() {
-                out.source = "Локальный файл".into();
-                return out;
-            }
-        }
-    }
-
-    out
-}
-
-fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fallback loader")
-    net = replace_once(net, '        "lyrics" => api.lyrics(arg).map(Data::Lyrics),', r'''        "lyrics" => {
-            let mut parts = arg.splitn(4, '|');
-            let track_id = parts.next().unwrap_or("");
-            let title = parts.next().unwrap_or("");
-            let artists = parts.next().unwrap_or("");
-            let _duration = parts.next();
-            let mut lyrics = api.lyrics(track_id).unwrap_or_default();
-            if lyrics.synced.is_empty() && (lyrics.text.is_empty() || is_subscription_notice(&lyrics)) {
-                lyrics = local_lyrics(track_id, title, artists);
-            }
-            Ok(Data::Lyrics(lyrics))
-        },''', "lyrics provider fallback")
-    net_path.write_text(net, encoding="utf-8")
-
+    # Disable and remove all song-lyrics entry points and loading.
     gui_path = root / "src" / "gui.rs"
     gui = gui_path.read_text(encoding="utf-8")
-    gui = replace_once(gui, '        let key = format!("lyrics:{}", t.id);', """        let key = format!("lyrics:{}|{}|{}|{}", t.id, t.title.replace('|', " "), t.artists.replace('|', " "), t.duration_ms / 1000);""", "pass track metadata to lyrics providers")
-    gui = replace_once(gui, '            app.set_has_lyrics(t.lyrics);', '            app.set_has_lyrics(true);', "always enable lyrics panel for fallback providers")
-    gui = replace_once(gui, '        if t.lyrics && current {', '        if current {', "always show lyrics action for current track")
+    gui = replace_once(gui, "            app.set_has_lyrics(t.lyrics);", "            app.set_has_lyrics(false);", "disable lyrics availability")
+    gui = replace_once(
+        gui,
+        """        if app.get_fullscreen() && app.get_fs_mode() == 2 {
+            self.sync_lyrics();
+        }
+""",
+        "",
+        "disable automatic lyrics loading",
+    )
+    gui = replace_once(
+        gui,
+        """        if t.lyrics && current {
+            items.push(self.menu_entry("lyrics", "Показать текст песни", icons.get_m_lyrics(), false));
+        }
+""",
+        "",
+        "remove lyrics from track context menu",
+    )
+    gui = replace_once(gui, '            "lyrics" => self.open_fullscreen(2),\\n', "", "remove lyrics menu action")
     gui_path.write_text(gui, encoding="utf-8")
 
-    # Remove every visible entry point for song lyrics; keep playback controls intact.
     playerbar_path = root / "ui" / "playerbar.slint"
     playerbar = playerbar_path.read_text(encoding="utf-8")
     playerbar = replace_once(
         playerbar,
-        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\n',
-        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\n',
-        "restore original main player lyrics button",
+        '            BarButton { x: parent.width - 193px; y: 24px; icon: Icons.lyrics; enabled: on && App.has-lyrics; clicked => { App.open-fullscreen(2); } }\\n',
+        "",
+        "remove main player lyrics button",
     )
     playerbar_path.write_text(playerbar, encoding="utf-8")
 
@@ -566,25 +509,10 @@ fn fetch(api: &Api, uid: &str, key: &str) -> Res<Data> {'''.lstrip(), "lyrics fa
                 clicked => { App.fs-mode = App.fs-mode == 2 ? 0 : 2; }
             }
 """,
-        """            RoundButton {
-                x: 168px;
-                y: 320px;
-                icon: Icons.lyrics-m;
-                enabled: App.has-lyrics;
-                ink: App.fs-mode == 2 ? #ffffff : #ffffff80;
-                clicked => { App.fs-mode = App.fs-mode == 2 ? 0 : 2; }
-            }
-""",
-        "restore original fullscreen lyrics button",
-    )
-    fullscreen = replace_once(
-        fullscreen,
-        '        text: T.t("Текста этой песни пока нет");',
-        '        text: T.t("Текста этой песни пока нет");',
-        "restore original lyrics empty-state message",
+        "",
+        "remove fullscreen lyrics button",
     )
     fullscreen_path.write_text(fullscreen, encoding="utf-8")
-
 
 
     # Remove the "About app" row from Settings without changing other settings.
